@@ -119,6 +119,30 @@ export interface AdminArtworkRow {
   updated_at: string;
 }
 
+export interface AdminEvent {
+  id: string;
+  slug: string;
+  title: string;
+  title_da: string | null;
+  description: string | null;
+  description_da: string | null;
+  location: string | null;
+  location_da: string | null;
+  /** wall-clock time in the event's own zone, "YYYY-MM-DDTHH:mm" (what the form shows) */
+  starts_local: string;
+  ends_local: string;
+  starts_at: string;
+  ends_at: string;
+  timezone: string;
+  max_participants: number;
+  price_minor: number;
+  currency: string;
+  status: 'draft' | 'published' | 'cancelled' | 'completed';
+  booked_confirmed: number;
+  booked_held: number;
+  bookings_total: number;
+}
+
 export interface AdminCategory {
   id: string;
   name: string;

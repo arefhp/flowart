@@ -277,7 +277,7 @@ Start the Worker (`wrangler dev`, port 8787) and web (`:3000`) per the README. T
 - Languages: fill in some Danish text in the admin, then use the EN | DA switch. Fields left empty in Danish show the English text. Check `/da/artworks` and `/da/about`.
 - Create artwork **without** price -> public page must show no price label, no "-", "N/A", "Free", or empty box. (Mandatory.)
 - Open `/admin/about`: check the artist statement is there, upload your portrait (JPEG/PNG/WebP, ideally portrait orientation, at least 1200 px tall), write the alt text, save, and view `/about` on desktop and phone. Remove the portrait and confirm the page still looks clean with text only.
-- Create an event, set date/time/capacity/price, publish, see it on `/calendar`. Check the times are correct for Copenhagen.
+- Create an event in `Admin -> Events` (it starts as a draft), set date/time/places/price, press **Publish**, see it on `/workshops` and `/calendar`. Check the times are correct for Copenhagen, try **Add to calendar**, then **Back to draft** and **Cancel event**. Try a time that does not exist (02:30 on the last Sunday of March): you must get a clear message.
 - Book with Stripe test card `4242 4242 4242 4242`. Forward webhooks:
   ```powershell
   stripe login
@@ -329,7 +329,7 @@ Fill in `/privacy` and `/terms` (cancellation and refund policy, contact info, w
 PUBLIC
 - [ ] Home, gallery, artwork detail, images load (from `media.zfadavi.com`)
 - [ ] Priced artwork shows price; unpriced artwork shows NO price element
-- [ ] Workshops list/detail, capacity correct, calendar works (correct Copenhagen times), `.ics` downloads
+- [ ] Workshops list/detail, places left are live, calendar works (correct Copenhagen times, also in a browser set to another time zone), `.ics` downloads and opens in your calendar app
 - [ ] Contact form (Turnstile) works and arrives at `info@zfadavi.com` -> your inbox
 - [ ] About page shows your portrait and statement; both editable in `/admin/about`
 - [ ] Instagram, Facebook and TikTok links show in the footer and open the right pages; editable in `/admin/social`; hiding all of them removes the section

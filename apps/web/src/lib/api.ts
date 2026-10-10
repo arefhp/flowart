@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import type { AboutContent, ArtworkDetail, ArtworkListItem, Locale, PublicCategory, SocialLink } from './types';
+import type { AboutContent, ArtworkDetail, ArtworkListItem, Locale, PublicCategory, PublicEvent, SocialLink } from './types';
 
 /**
  * Build-time data access (spec section 1.2). The static site is generated from the public API.
@@ -45,6 +45,24 @@ export async function getArtworks(lang: Locale, opts: { featured?: boolean } = {
 
 export async function getCategories(lang: Locale): Promise<PublicCategory[]> {
   return (await get<{ categories: PublicCategory[] }>(`/api/categories?lang=${lang}`, { categories: [] })).categories;
+}
+
+export async function getEvents(lang: Locale): Promise<PublicEvent[]> {
+  return (await get<{ events: PublicEvent[] }>(`/api/events?lang=${lang}`, { events: [] })).events;
+}
+
+export async function getEvent(slug: string, lang: Locale): Promise<PublicEvent> {
+  try {
+    return await get<PublicEvent>(`/api/events/${encodeURIComponent(slug)}?lang=${lang}`, undefined as never);
+  } catch (err) {
+    if (err instanceof ApiNotFound) notFound();
+    throw err;
+  }
+}
+
+/** Slugs for generateStaticParams (every public event, including finished and cancelled ones). */
+export async function getEventSlugs(): Promise<string[]> {
+  return (await getEvents('en')).map((e) => e.slug);
 }
 
 export async function getArtwork(slug: string, lang: Locale): Promise<ArtworkDetail> {

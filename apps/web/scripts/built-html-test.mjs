@@ -25,8 +25,33 @@ const PRICED_BASE = { slug: 'second-piece', title: 'Second Piece', status: 'sold
 let scenario = { social: true, portrait: false, priced: true };
 const priced = () => (scenario.priced ? { price_minor: 1200000, currency: 'DKK' } : {});
 
+const evt = (slug, title, startsAt, endsAt, status = 'published', extra = {}) => ({
+  slug,
+  title,
+  description: 'First paragraph.\n\nSecond paragraph.',
+  startsAt,
+  endsAt,
+  timezone: 'Europe/Copenhagen',
+  location: 'The studio, Copenhagen',
+  priceMinor: 45000,
+  currency: 'DKK',
+  status,
+  ...extra,
+});
+// Times are stored as UTC instants; the pages must show COPENHAGEN wall-clock time.
+const EVENTS = [
+  evt('summer-workshop', 'Summer Workshop', '2031-07-12T08:00:00.000Z', '2031-07-12T11:00:00.000Z'), // 10:00-13:00 CEST
+  evt('winter-workshop', 'Winter Workshop', '2031-01-11T09:00:00.000Z', '2031-01-11T12:00:00.000Z'), // 10:00-13:00 CET
+  evt('spring-forward', 'Spring Forward', '2031-03-30T01:00:00.000Z', '2031-03-30T05:00:00.000Z'), // 03:00-07:00 (first summer hour)
+  evt('autumn-back', 'Autumn Back', '2031-10-26T00:30:00.000Z', '2031-10-26T03:30:00.000Z'), // 02:30-04:30 (across the repeated hour)
+  evt('cancelled-one', 'Cancelled One', '2031-08-01T08:00:00.000Z', '2031-08-01T11:00:00.000Z', 'cancelled'),
+  evt('free-one', 'Free One', '2031-09-01T08:00:00.000Z', '2031-09-01T11:00:00.000Z', 'published', { priceMinor: 0 }),
+  evt('past-one', 'Past One', '2020-05-10T08:00:00.000Z', '2020-05-10T11:00:00.000Z', 'completed'),
+];
+
 const fixtures = {
   artworks: () => [NO_PRICE, { ...PRICED_BASE, ...priced() }],
+  events: () => EVENTS,
   categories: () => [{ ...FINE, count: 1 }, { ...RESIN, count: 1 }],
   detail: (slug) =>
     slug === NO_PRICE.slug
@@ -60,6 +85,11 @@ const server = http.createServer((req, res) => {
   if (p.startsWith('/api/artworks/')) {
     const d = fixtures.detail(decodeURIComponent(p.slice('/api/artworks/'.length)));
     return d ? send(d) : send({ error: { code: 'not_found', message: 'Not found' } }, 404);
+  }
+  if (p === '/api/events') return send({ events: fixtures.events() });
+  if (p.startsWith('/api/events/') && !p.endsWith('/availability')) {
+    const e = fixtures.events().find((x) => x.slug === decodeURIComponent(p.slice('/api/events/'.length)));
+    return e ? send(e) : send({ error: { code: 'not_found', message: 'Not found' } }, 404);
   }
   if (p === '/api/about') return send(fixtures.about());
   if (p === '/api/social') return send(fixtures.social());
@@ -165,6 +195,44 @@ try {
   }
   check('artwork page links to its category filter', /href="\/artworks\?category=fine-art"/.test(en));
   check('Danish artwork page links to the Danish category filter', /href="\/da\/artworks\?category=fine-art"/.test(read('da/artworks/quiet-piece.html')));
+
+  // ---- workshops ----
+  const strip = (h) => h.replace(/<script[\s\S]*?<\/script>/g, '');
+  const EN_DASH = '\u2013';
+  for (const [slug, times, label] of [
+    ['summer-workshop', `10:00${EN_DASH}13:00`, 'summer time (UTC+2)'],
+    ['winter-workshop', `10:00${EN_DASH}13:00`, 'winter time (UTC+1)'],
+    ['spring-forward', `03:00${EN_DASH}07:00`, 'the first summer-time hour on the day the clocks go forward'],
+    ['autumn-back', `02:30${EN_DASH}04:30`, 'across the repeated hour when the clocks go back'],
+  ]) {
+    const page = strip(read(`workshops/${slug}.html`));
+    check(`workshop page shows Copenhagen time ${times} for ${label}`, page.includes(times));
+    // Danish writes the time with a dot (10.00) instead of a colon
+    check(`[da] the Danish workshop page shows the same Copenhagen time for ${label}`, strip(read(`da/workshops/${slug}.html`)).includes(times.replaceAll(':', '.')));
+  }
+  const summer = read('workshops/summer-workshop.html');
+  const summerText = strip(summer);
+  check('workshop page: date in the event zone, price per person, "Copenhagen time" note', /Saturday,? 12 July 2031/.test(summerText) && /DKK\s?450 per person/.test(summerText) && summerText.includes('Copenhagen time'));
+  check('[da] Danish workshop page: Danish date and price wording', /lørdag.*12\. juli 2031/.test(strip(read('da/workshops/summer-workshop.html'))) && /pr\. person/.test(strip(read('da/workshops/summer-workshop.html'))));
+  check('a free workshop says "Free"', /\bFree\b/.test(strip(read('workshops/free-one.html'))));
+  const eventLd = (h) => [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1])).find((d) => d['@type'] === 'Event') ?? {};
+  const ld = eventLd(summer);
+  check('workshop JSON-LD is an Event with an offer, start time and no availability claim', ld['@type'] === 'Event' && ld.offers?.price === '450' && ld.offers?.priceCurrency === 'DKK' && ld.startDate === '2031-07-12T08:00:00.000Z' && !('availability' in (ld.offers ?? {})));
+  check('a cancelled workshop is marked EventCancelled', /EventCancelled/.test(read('workshops/cancelled-one.html')));
+  check('"Add to calendar" is offered for a normal workshop but not a cancelled one', /\/api\/events\/summer-workshop\/ics\?lang=en/.test(summer) && !/\/ics\?lang=/.test(read('workshops/cancelled-one.html')));
+  check('the cancelled workshop page says so and has no "Ask about a place" button', /This workshop has been cancelled/.test(strip(read('workshops/cancelled-one.html'))) === false || !/Ask about a place/.test(strip(read('workshops/cancelled-one.html'))));
+  const staticPages = ['workshops.html', 'calendar.html', 'index.html', 'workshops/summer-workshop.html', 'da/workshops.html', 'da/calendar.html'];
+  // The wording ("{n} places left") is shipped as a template and filled in from the live API in the browser;
+  // what must never appear in the HTML is an actual number of places.
+  check('NO capacity is baked into the static pages (no rendered "8 places left", "Sold out" or "udsolgt")', staticPages.every((p) => { const v = strip(read(p)); return !/\d+ places? left|\d+ pladser? tilbage|Sold out|Udsolgt|1 place left|1 plads tilbage/i.test(v) && !/"remaining"|"taken"|"maxParticipants"/.test(read(p)); }));
+  const list = strip(read('workshops.html'));
+  check('the workshops list has upcoming and past sections and every public workshop', list.includes('Upcoming workshops') && list.includes('Past workshops') && ['Summer Workshop', 'Winter Workshop', 'Spring Forward', 'Autumn Back', 'Cancelled One', 'Past One'].every((t) => list.includes(t)));
+  check('the home page has the upcoming-workshops teaser without the cancelled workshop', (() => { const h = strip(read('index.html')); return h.includes('Upcoming workshops') && !h.includes('Cancelled One') && h.includes('See all workshops'); })());
+  check('the calendar page has a Monday-first grid and month buttons', (() => { const h = strip(read('calendar.html')); return /Mon/.test(h) && /Previous month/.test(h) && /Next month/.test(h); })());
+  check('every public page has Workshops and Calendar in the menu', ['index.html', 'about.html', 'artworks.html', 'contact.html'].every((p) => { const h = strip(read(p)); return /Workshops/.test(h) && />Calendar</.test(h); }));
+  check('[da] the Danish menu says Kalender', />Kalender</.test(strip(read('da.html'))));
+  check('canonical URL and hreflang for a workshop', /rel="canonical" href="https:\/\/zfadavi\.com\/workshops\/summer-workshop"/.test(summer) && /hrefLang="da" href="https:\/\/zfadavi\.com\/da\/workshops\/summer-workshop"/i.test(summer));
+  check('sitemap lists the workshop pages and the calendar in both languages', (() => { const m = read('sitemap.xml'); return ['/workshops', '/calendar', '/workshops/summer-workshop', '/da/workshops/summer-workshop', '/da/calendar'].every((p) => m.includes(`https://zfadavi.com${p}`)); })());
 
   const about = read('about.html');
   check('About with NO portrait has no <img> at all', !/<img /.test(about));

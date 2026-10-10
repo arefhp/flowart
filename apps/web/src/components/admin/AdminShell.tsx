@@ -9,6 +9,8 @@ const NAV = [
   { href: '/admin', label: 'Overview', exact: true },
   { href: '/admin/artworks', label: 'Artworks' },
   { href: '/admin/categories', label: 'Categories' },
+  { href: '/admin/events', label: 'Events' },
+  { href: '/admin/calendar', label: 'Calendar' },
   { href: '/admin/about', label: 'About' },
   { href: '/admin/social', label: 'Social links' },
   { href: '/admin/messages', label: 'Messages' },

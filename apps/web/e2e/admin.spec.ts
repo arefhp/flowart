@@ -8,7 +8,7 @@ test('the admin shows the local development banner and its navigation', async ({
   await page.goto('/admin');
   await expect(page.getByText('Local development mode')).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Admin' });
-  for (const name of ['Overview', 'Artworks', 'Categories', 'About', 'Social links', 'Messages', 'Help']) {
+  for (const name of ['Overview', 'Artworks', 'Categories', 'Events', 'Calendar', 'About', 'Social links', 'Messages', 'Help']) {
     await expect(nav.getByRole('link', { name })).toBeVisible();
   }
   await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible();

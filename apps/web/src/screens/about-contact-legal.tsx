@@ -87,7 +87,7 @@ export async function ContactScreen({ locale }: { locale: Locale }) {
             <h1 className="mb-6 text-[clamp(2.2rem,5vw,3.6rem)]">{t.contact.title}</h1>
             <p className="prose-artist mb-10 text-stone">{t.contact.intro}</p>
             <Suspense fallback={null}>
-              <ContactForm locale={locale} t={{ contact: t.contact, enquiryMessage: t.artwork.enquiryMessage }} />
+              <ContactForm locale={locale} t={{ contact: t.contact, enquiryMessage: t.artwork.enquiryMessage, reserveMessage: t.events.reserveMessage }} />
             </Suspense>
           </div>
           <aside className="lg:pt-24">

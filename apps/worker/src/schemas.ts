@@ -1,4 +1,13 @@
-import { ARTWORK_STATUSES, LIMITS, LOCALES, SIZE_CLASSES, SOCIAL_PLATFORMS } from '@flowart/shared';
+import {
+  ARTWORK_STATUSES,
+  DEFAULT_TIMEZONE,
+  LIMITS,
+  LOCALES,
+  SIZE_CLASSES,
+  SOCIAL_PLATFORMS,
+  isValidTimeZone,
+  localToUtc,
+} from '@flowart/shared';
 import { z } from 'zod';
 import { isValidEmail } from './email';
 import { HttpError } from './lib/http';
@@ -71,6 +80,61 @@ export const categoryInput = z.object({
   name: requiredText(LIMITS.categoryNameMax, 'The English name'),
   name_da: optText(LIMITS.categoryNameMax),
 });
+
+const MAX_EVENT_DAYS = 14;
+
+/** Local start/end (typed in the event's own time zone) to UTC instants, with plain-language errors. */
+function eventTimes(v: { starts_local: string; ends_local: string; timezone: string }) {
+  const errors: Array<{ path: string; message: string }> = [];
+  if (!isValidTimeZone(v.timezone)) errors.push({ path: 'timezone', message: 'This time zone is not recognised.' });
+  const start = errors.length ? null : localToUtc(v.starts_local, v.timezone);
+  const end = errors.length ? null : localToUtc(v.ends_local, v.timezone);
+  const gap = 'That time does not exist: the clocks go forward then. Choose a different time.';
+  if (start && !start.ok) errors.push({ path: 'starts_local', message: start.reason === 'nonexistent' ? gap : 'Enter the start date and time.' });
+  if (end && !end.ok) errors.push({ path: 'ends_local', message: end.reason === 'nonexistent' ? gap : 'Enter the end date and time.' });
+  if (start?.ok && end?.ok) {
+    const ms = Date.parse(end.utc) - Date.parse(start.utc);
+    if (ms <= 0) errors.push({ path: 'ends_local', message: 'The end must be after the start.' });
+    else if (ms > MAX_EVENT_DAYS * 86_400_000) errors.push({ path: 'ends_local', message: `An event can last at most ${MAX_EVENT_DAYS} days.` });
+  }
+  return { errors, starts_at: start?.ok ? start.utc : '', ends_at: end?.ok ? end.utc : '' };
+}
+
+/**
+ * A workshop or event. The admin types LOCAL time ("2026-11-14T10:00") in the event's time zone;
+ * the stored values are UTC instants (spec section 5: no separate date/time/zone columns).
+ */
+export const eventInput = z
+  .object({
+    title: requiredText(LIMITS.titleMax, 'The English title'),
+    title_da: optText(LIMITS.titleMax),
+    description: optText(LIMITS.descriptionMax),
+    description_da: optText(LIMITS.descriptionMax),
+    location: optText(200),
+    location_da: optText(200),
+    starts_local: z.string().trim(),
+    ends_local: z.string().trim(),
+    timezone: z.string().trim().default(DEFAULT_TIMEZONE),
+    max_participants: z.number({ error: 'Enter the number of places.' }).int('Use a whole number.').min(1, 'There must be at least 1 place.').max(200, 'At most 200 places.'),
+    /** per person, in minor units (øre). 0 = free. */
+    price_minor: z.number({ error: 'Enter the price per person.' }).int().min(0, 'The price cannot be negative.').max(100_000_000),
+    currency: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z]{3}$/, 'Use a 3-letter currency code such as DKK.')
+      .default('DKK'),
+  })
+  .superRefine((v, ctx) => {
+    for (const e of eventTimes(v).errors) ctx.addIssue({ code: 'custom', path: [e.path], message: e.message });
+  })
+  .transform((v) => {
+    const { starts_at, ends_at } = eventTimes(v);
+    return { ...v, starts_at, ends_at };
+  });
+export type EventInput = z.infer<typeof eventInput>;
+
+export const eventCancelInput = z.object({ confirm: z.boolean().optional() });
 
 export const coverInput = z.object({ imageId: z.string().min(1).nullable() });
 export const orderInput = z.object({ ids: z.array(z.string().min(1)).max(LIMITS.imagesPerArtworkMax) });

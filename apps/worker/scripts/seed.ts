@@ -10,13 +10,14 @@ import { existsSync, readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { IMAGE_WIDTHS, parseWebpSize, type ImageWidth } from '@flowart/shared';
+import { DEFAULT_TIMEZONE, IMAGE_WIDTHS, dayInZone, localToUtc, parseWebpSize, type ImageWidth } from '@flowart/shared';
 import sharp from 'sharp';
 import { getPlatformProxy } from 'wrangler';
 import type { Env } from '../src/env';
 import { setState } from '../src/lib/site-state';
 import { setPortrait } from '../src/services/about';
 import { addImage, createArtwork, setCover, type ArtworkRow } from '../src/services/artworks';
+import { cancelEvent, createEvent, publishEvent } from '../src/services/events';
 import type { ValidatedUpload } from '../src/services/images';
 
 if (process.argv.includes('--remote') || process.env.APP_ENV === 'production') {
@@ -216,6 +217,143 @@ const SEED: SeedArtwork[] = [
   },
 ];
 
+/** The Copenhagen calendar day (YYYY-MM-DD) that is at least `minDays` from now and falls on `weekday` (0 = Sunday). */
+function dayOnOrAfter(minDays: number, weekday: number): string {
+  for (let add = minDays; add < minDays + 8; add++) {
+    const day = dayInZone(new Date(Date.now() + add * 86_400_000).toISOString(), DEFAULT_TIMEZONE);
+    if (new Date(`${day}T12:00:00Z`).getUTCDay() === weekday) return day;
+  }
+  throw new Error('no such weekday');
+}
+
+type SeedEvent = {
+  title: string;
+  title_da: string | null;
+  description: string;
+  description_da: string | null;
+  location: string;
+  location_da: string | null;
+  day: string;
+  from: string;
+  to: string;
+  max_participants: number;
+  price_minor: number;
+  outcome: 'published' | 'draft' | 'cancelled' | 'completed';
+};
+
+/** Workshops with dates relative to today, so they are always upcoming however long ago you seeded. */
+async function seedEvents(env: Env): Promise<number> {
+  const past = dayInZone(new Date(Date.now() - 30 * 86_400_000).toISOString(), DEFAULT_TIMEZONE);
+  const events: SeedEvent[] = [
+    {
+      title: 'Oil Painting for Beginners',
+      title_da: 'Oliemaling for begyndere',
+      description:
+        'An unhurried Saturday in the studio. We start with colour mixing, then build a small painting in layers, step by step.\n\nNo experience needed. Paint, canvas, brushes and snacks are all included.',
+      description_da:
+        'En rolig lørdag i atelieret. Vi starter med farveblanding og bygger derefter et lille maleri op i lag, trin for trin.\n\nDu behøver ingen erfaring. Maling, lærred, pensler og snacks er inkluderet.',
+      location: 'The studio, Copenhagen',
+      location_da: 'Atelieret, København',
+      day: dayOnOrAfter(10, 6),
+      from: '10:00',
+      to: '14:00',
+      max_participants: 8,
+      price_minor: 55_000,
+      outcome: 'published',
+    },
+    {
+      title: 'Resin Art Evening',
+      title_da: null,
+      description: 'Pour, tilt and swirl: an evening of resin and pigment. You take your own piece home once it has cured.',
+      description_da: null,
+      location: 'The studio, Copenhagen',
+      location_da: null,
+      day: dayOnOrAfter(24, 4),
+      from: '18:00',
+      to: '21:00',
+      max_participants: 6,
+      price_minor: 65_000,
+      outcome: 'published',
+    },
+    {
+      title: 'Colour Study Day',
+      title_da: 'Farvestudiedag',
+      description: 'A draft that is not public yet: a full day exploring colour in oil.',
+      description_da: null,
+      location: 'The studio, Copenhagen',
+      location_da: null,
+      day: dayOnOrAfter(45, 0),
+      from: '10:00',
+      to: '16:00',
+      max_participants: 10,
+      price_minor: 90_000,
+      outcome: 'draft',
+    },
+    {
+      title: 'Autumn Landscape Morning',
+      title_da: null,
+      description: 'This workshop was cancelled, to show how a cancelled event looks.',
+      description_da: null,
+      location: 'The studio, Copenhagen',
+      location_da: null,
+      day: dayOnOrAfter(17, 2),
+      from: '09:30',
+      to: '12:30',
+      max_participants: 8,
+      price_minor: 45_000,
+      outcome: 'cancelled',
+    },
+    {
+      title: 'Winter Still Life',
+      title_da: null,
+      description: 'A workshop that has already taken place, to show the past list.',
+      description_da: null,
+      location: 'The studio, Copenhagen',
+      location_da: null,
+      day: past,
+      from: '10:00',
+      to: '13:00',
+      max_participants: 8,
+      price_minor: 45_000,
+      outcome: 'completed',
+    },
+  ];
+
+  let added = 0;
+  for (const e of events) {
+    const exists = await env.DB.prepare('SELECT id FROM events WHERE title = ?1').bind(e.title).first();
+    if (exists) {
+      console.log(`  = event "${e.title}" already exists, skipped`);
+      continue;
+    }
+    const start = localToUtc(`${e.day}T${e.from}`, DEFAULT_TIMEZONE);
+    const end = localToUtc(`${e.day}T${e.to}`, DEFAULT_TIMEZONE);
+    if (!start.ok || !end.ok) throw new Error(`Seed time is invalid for ${e.title}`);
+    const created = await createEvent(env, {
+      title: e.title,
+      title_da: e.title_da,
+      description: e.description,
+      description_da: e.description_da,
+      location: e.location,
+      location_da: e.location_da,
+      starts_local: `${e.day}T${e.from}`,
+      ends_local: `${e.day}T${e.to}`,
+      timezone: DEFAULT_TIMEZONE,
+      max_participants: e.max_participants,
+      price_minor: e.price_minor,
+      currency: 'DKK',
+      starts_at: start.utc,
+      ends_at: end.utc,
+    });
+    if (e.outcome === 'published') await publishEvent(env, created.id);
+    if (e.outcome === 'cancelled') await cancelEvent(env, created.id);
+    if (e.outcome === 'completed') await env.DB.prepare(`UPDATE events SET status = 'completed' WHERE id = ?1`).bind(created.id).run();
+    console.log(`  + event "${e.title}" (${e.outcome}, ${e.day} ${e.from})`);
+    added++;
+  }
+  return added;
+}
+
 async function main() {
   const { env, dispose } = await getPlatformProxy<Env>({ configPath: path.join(workerDir, 'wrangler.jsonc') });
   try {
@@ -255,6 +393,8 @@ async function main() {
     } else {
       console.log('  = About portrait already set, skipped');
     }
+
+    created += await seedEvents(env);
 
     await setState(env, 'content_updated_at', new Date().toISOString());
     console.log(created ? `Done. Added ${created} item(s).` : 'Nothing to add: the sample data is already there.');

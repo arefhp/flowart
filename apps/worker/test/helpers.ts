@@ -153,3 +153,86 @@ export async function insertArtwork(
   }
   return { id, slug, imageIds };
 }
+
+// ---------------------------------------------------------------------------- events
+
+/** A valid admin request body for an event, in LOCAL time (far in the future so it is never "past"). */
+export const baseEvent = {
+  title: 'Oil Painting Workshop',
+  title_da: null as string | null,
+  description: 'An afternoon of oil painting for beginners.' as string | null,
+  description_da: null as string | null,
+  location: 'The studio, Copenhagen' as string | null,
+  location_da: null as string | null,
+  starts_local: '2030-05-10T10:00',
+  ends_local: '2030-05-10T13:00',
+  timezone: 'Europe/Copenhagen',
+  max_participants: 8,
+  price_minor: 45000,
+  currency: 'DKK',
+};
+
+export interface EventFields {
+  title: string;
+  title_da: string | null;
+  description: string | null;
+  description_da: string | null;
+  location: string | null;
+  location_da: string | null;
+  starts_at: string;
+  ends_at: string;
+  max_participants: number;
+  price_minor: number;
+  currency: string;
+  status: string;
+  slug: string;
+}
+
+/** Insert an event straight into the database (UTC instants). Defaults to a published event in 2030. */
+export async function insertEvent(fields: Partial<EventFields> = {}): Promise<{ id: string; slug: string }> {
+  const id = uuid();
+  const e: EventFields = {
+    title: 'Sample Workshop',
+    title_da: null,
+    description: 'A sample workshop.',
+    description_da: null,
+    location: 'Studio',
+    location_da: null,
+    starts_at: '2030-05-10T08:00:00.000Z',
+    ends_at: '2030-05-10T11:00:00.000Z',
+    max_participants: 8,
+    price_minor: 45000,
+    currency: 'DKK',
+    status: 'published',
+    slug: `workshop-${id.slice(0, 8)}`,
+    ...fields,
+  };
+  const now = nowIso();
+  await env.DB.prepare(
+    `INSERT INTO events (id, title, title_da, slug, description, description_da, starts_at, ends_at, timezone, location,
+       location_da, max_participants, price_minor, currency, status, created_at, updated_at)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,'Europe/Copenhagen',?9,?10,?11,?12,?13,?14,?15,?15)`,
+  )
+    .bind(id, e.title, e.title_da, e.slug, e.description, e.description_da, e.starts_at, e.ends_at, e.location,
+      e.location_da, e.max_participants, e.price_minor, e.currency, e.status, now)
+    .run();
+  return { id, slug: e.slug };
+}
+
+/** Insert a booking row (the booking flow itself arrives in Milestone 3). */
+export async function insertBooking(
+  eventId: string,
+  opts: { participants?: number; booking_status?: string; payment_status?: string; hold_expires_at?: string | null } = {},
+): Promise<string> {
+  const id = uuid();
+  const now = nowIso();
+  await env.DB.prepare(
+    `INSERT INTO event_bookings (id, event_id, public_token, customer_name, customer_email, locale, number_of_participants,
+       amount_minor, currency, payment_status, booking_status, hold_expires_at, created_at, updated_at)
+     VALUES (?1,?2,?3,'Test Person','test@example.com','en',?4,?5,'DKK',?6,?7,?8,?9,?9)`,
+  )
+    .bind(id, eventId, uuid(), opts.participants ?? 1, (opts.participants ?? 1) * 45000, opts.payment_status ?? 'paid',
+      opts.booking_status ?? 'confirmed', opts.hold_expires_at ?? null, now)
+    .run();
+  return id;
+}

@@ -49,6 +49,33 @@ export interface ArtworkDetail {
   currency?: string;
 }
 
+export type EventStatus = 'published' | 'cancelled' | 'completed';
+
+/** A workshop. Capacity is NOT part of it: the static pages never carry availability. */
+export interface PublicEvent {
+  slug: string;
+  title: string;
+  description?: string;
+  /** UTC instants */
+  startsAt: string;
+  endsAt: string;
+  /** the zone the event happens in; times are shown in it */
+  timezone: string;
+  location?: string;
+  /** per person, minor units; 0 = free */
+  priceMinor: number;
+  currency: string;
+  status: EventStatus;
+}
+
+/** Live capacity from the API (fetched in the browser, never baked into a page). */
+export interface EventAvailability {
+  slug: string;
+  remaining: number;
+  soldOut: boolean;
+  bookable: boolean;
+}
+
 export interface AboutContent {
   heading?: string;
   body: string;

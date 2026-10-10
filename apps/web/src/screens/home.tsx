@@ -2,11 +2,12 @@ import { localePath, type Locale } from '@flowart/shared';
 import Link from 'next/link';
 import { ArtworkGrid } from '@/components/site/ArtworkGrid';
 import { ArtworkLabel } from '@/components/site/ArtworkLabel';
+import { EventsList } from '@/components/site/EventsList';
 import { JsonLd } from '@/components/site/JsonLd';
 import { Picture } from '@/components/site/Picture';
 import { SiteShell } from '@/components/site/SiteShell';
 import { getDict } from '@/i18n/dictionary';
-import { getArtworks, getSocial } from '@/lib/api';
+import { getArtworks, getEvents, getSocial } from '@/lib/api';
 import { SITE_NAME, SITE_URL } from '@/lib/config';
 import { pageMetadata } from '@/lib/seo';
 
@@ -17,10 +18,11 @@ export function homeMetadata(locale: Locale) {
 
 export async function HomeScreen({ locale }: { locale: Locale }) {
   const t = getDict(locale);
-  const [all, featured, social] = await Promise.all([
+  const [all, featured, social, events] = await Promise.all([
     getArtworks(locale),
     getArtworks(locale, { featured: true }),
     getSocial(),
+    getEvents(locale),
   ]);
   const hero = featured[0] ?? all[0];
   const rest = all.filter((a) => a.slug !== hero?.slug).slice(0, 6);
@@ -63,6 +65,9 @@ export async function HomeScreen({ locale }: { locale: Locale }) {
             )}
           </div>
         </section>
+
+        {/* a short list of the next workshops; it hides itself when none are upcoming */}
+        <EventsList events={events} locale={locale} t={t.events} builtAtMs={Date.now()} variant="home" limit={3} />
 
         {rest.length > 0 ? (
           <section aria-labelledby="recent" className="mt-28">

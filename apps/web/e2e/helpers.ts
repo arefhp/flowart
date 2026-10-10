@@ -48,3 +48,29 @@ export async function deleteArtwork(page: Page, id: string) {
   await page.getByRole('button', { name: 'Delete artwork' }).click();
   await expect(page).toHaveURL(/\/admin\/artworks$/);
 }
+
+/** Create an event (a DRAFT) through the admin form; returns its id. Times are Copenhagen wall-clock "YYYY-MM-DDTHH:mm". */
+export async function createEvent(
+  page: Page,
+  title: string,
+  opts: { start?: string; end?: string; places?: string; price?: string; titleDa?: string; location?: string } = {},
+): Promise<string> {
+  await page.goto('/admin/events/new');
+  await page.getByLabel('Title (English)').fill(title);
+  if (opts.titleDa) await page.getByLabel('Title (Danish, optional)').fill(opts.titleDa);
+  await page.getByLabel('Starts').fill(opts.start ?? '2031-05-10T10:00');
+  await page.getByLabel('Ends').fill(opts.end ?? '2031-05-10T13:00');
+  await page.getByLabel('Location (English)').fill(opts.location ?? 'The studio, Copenhagen');
+  await page.getByLabel('Number of places').fill(opts.places ?? '5');
+  await page.getByLabel('Price per person').fill(opts.price ?? '450');
+  await page.getByRole('button', { name: 'Save as draft' }).click();
+  await expect(page).toHaveURL(/\/admin\/events\/edit\?id=.+&created=1/);
+  return new URL(page.url()).searchParams.get('id')!;
+}
+
+export async function deleteEvent(page: Page, id: string) {
+  page.once('dialog', (d) => void d.accept());
+  await page.goto(`/admin/events/edit?id=${id}`);
+  await page.getByRole('button', { name: 'Delete event' }).click();
+  await expect(page).toHaveURL(/\/admin\/events$/);
+}

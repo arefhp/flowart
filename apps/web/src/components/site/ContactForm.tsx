@@ -4,6 +4,7 @@ import type { Locale } from '@flowart/shared';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { fmt, type Dict } from '@/i18n/dictionary';
+import { formatEventDate } from '@/lib/event-format';
 import { TURNSTILE_SITE_KEY, isTurnstileTestKey } from '@/lib/config';
 
 declare global {
@@ -24,12 +25,14 @@ const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]+$/;
  * (`?artwork=slug`). Spam protection is Cloudflare Turnstile, verified again on the server.
  */
 /** Only the strings this form needs are passed in, not the whole dictionary. */
-export type ContactStrings = { contact: Dict['contact']; enquiryMessage: string };
+export type ContactStrings = { contact: Dict['contact']; enquiryMessage: string; reserveMessage: string };
 
 export function ContactForm({ locale, t }: { locale: Locale; t: ContactStrings }) {
   const params = useSearchParams();
   const artworkSlug = params.get('artwork');
+  const eventSlug = params.get('event');
   const [artworkTitle, setArtworkTitle] = useState<string | null>(null);
+  const [eventTitle, setEventTitle] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -61,6 +64,27 @@ export function ContactForm({ locale, t }: { locale: Locale; t: ContactStrings }
       cancelled = true;
     };
   }, [artworkSlug, locale, t.enquiryMessage]);
+
+  // a visitor who arrives from a workshop page (?event=slug): name it and pre-fill the message once
+  useEffect(() => {
+    if (!eventSlug) return;
+    let cancelled = false;
+    fetch(`/api/events/${encodeURIComponent(eventSlug)}?lang=${locale}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((e: { title?: string; startsAt?: string; timezone?: string } | null) => {
+        if (cancelled || !e?.title || !e.startsAt) return;
+        setEventTitle(e.title);
+        if (!prefilled.current) {
+          prefilled.current = true;
+          const date = formatEventDate(e.startsAt, e.timezone ?? 'Europe/Copenhagen', locale);
+          setMessage((m) => (m ? m : fmt(t.reserveMessage, { title: e.title!, date })));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [eventSlug, locale, t.reserveMessage]);
 
   // Turnstile: the always-pass TEST key needs no script, so local development works offline
   useEffect(() => {
@@ -162,6 +186,11 @@ export function ContactForm({ locale, t }: { locale: Locale; t: ContactStrings }
       {artworkTitle ? (
         <p className="wall-label">
           {t.contact.aboutArtwork}: <span className="title">{artworkTitle}</span>
+        </p>
+      ) : null}
+      {eventTitle ? (
+        <p className="wall-label">
+          {t.contact.aboutWorkshop}: <span className="title">{eventTitle}</span>
         </p>
       ) : null}
       <div>

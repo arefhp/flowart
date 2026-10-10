@@ -22,6 +22,8 @@ export async function SiteShell({
   const other: Locale = locale === 'en' ? 'da' : 'en';
   const navItems = [
     { href: localePath(locale, '/artworks'), label: t.nav.artworks, active: path.startsWith('/artworks') },
+    { href: localePath(locale, '/workshops'), label: t.nav.workshops, active: path.startsWith('/workshops') },
+    { href: localePath(locale, '/calendar'), label: t.nav.calendar, active: path === '/calendar' },
     { href: localePath(locale, '/about'), label: t.nav.about, active: path === '/about' },
     { href: localePath(locale, '/contact'), label: t.nav.contact, active: path === '/contact' },
   ];
@@ -38,7 +40,7 @@ export async function SiteShell({
         <Link href={localePath(locale, '/')} className="font-serif text-[1.6rem] leading-none tracking-tight">
           {t.siteName}
         </Link>
-        <nav aria-label={t.nav.label} className="flex flex-wrap items-center gap-x-7 gap-y-1 text-[0.95rem]">
+        <nav aria-label={t.nav.label} className="flex flex-wrap items-center gap-x-6 gap-y-1 text-[0.95rem]">
           {navItems.map((item) => (
             <Link
               key={item.href}

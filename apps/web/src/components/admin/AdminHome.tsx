@@ -59,6 +59,8 @@ export function AdminHome() {
           {[
             ['/admin/artworks', 'Artworks', 'Add, edit and organise the gallery.'],
             ['/admin/categories', 'Categories', 'Fine Art, Resin and any others you add.'],
+            ['/admin/events', 'Events', 'Create, publish and cancel workshops.'],
+            ['/admin/calendar', 'Calendar', 'All workshops by date, with places booked.'],
             ['/admin/about', 'About', 'Your statement and portrait, in English and Danish.'],
             ['/admin/social', 'Social links', 'Instagram, Facebook, TikTok and more.'],
             ['/admin/messages', 'Messages', 'What visitors wrote to you.'],

@@ -9,6 +9,7 @@ import {
   artworkInput,
   categoryInput,
   coverInput,
+  eventInput,
   imageAltInput,
   orderInput,
   parse,
@@ -35,6 +36,16 @@ import {
   reorderCategories,
   updateCategory,
 } from '../services/categories';
+import {
+  cancelEvent,
+  createEvent,
+  deleteEvent,
+  getAdminEvent,
+  listAdminEvents,
+  publishEvent,
+  unpublishEvent,
+  updateEvent,
+} from '../services/events';
 import { validateUpload } from '../services/images';
 import { getAdminSocial, replaceSocial } from '../services/social';
 
@@ -65,6 +76,50 @@ async function readUpload(c: C): Promise<FormData> {
 }
 
 adminRoutes.get('/me', (c) => c.json({ email: actor(c), devMode: adminBypassActive(c.env) }));
+
+// ---- events (workshops) ----
+adminRoutes.get('/events', async (c) => c.json({ events: await listAdminEvents(c.env) }));
+
+adminRoutes.post('/events', async (c) => {
+  const input = parse(eventInput, await readJson(c.req.raw));
+  const event = await createEvent(c.env, input);
+  await changed(c, 'event.create', 'event', event.id, { title: event.title });
+  return c.json(event, 201);
+});
+
+adminRoutes.get('/events/:id', async (c) => c.json(await getAdminEvent(c.env, c.req.param('id'))));
+
+adminRoutes.put('/events/:id', async (c) => {
+  const input = parse(eventInput, await readJson(c.req.raw));
+  const event = await updateEvent(c.env, c.req.param('id'), input);
+  await changed(c, 'event.update', 'event', event.id);
+  return c.json(event);
+});
+
+adminRoutes.post('/events/:id/publish', async (c) => {
+  const event = await publishEvent(c.env, c.req.param('id'));
+  await changed(c, 'event.publish', 'event', event.id);
+  return c.json(event);
+});
+
+adminRoutes.post('/events/:id/unpublish', async (c) => {
+  const event = await unpublishEvent(c.env, c.req.param('id'));
+  await changed(c, 'event.unpublish', 'event', event.id);
+  return c.json(event);
+});
+
+adminRoutes.post('/events/:id/cancel', async (c) => {
+  const event = await cancelEvent(c.env, c.req.param('id'));
+  await changed(c, 'event.cancel', 'event', event.id);
+  return c.json(event);
+});
+
+adminRoutes.delete('/events/:id', async (c) => {
+  const id = c.req.param('id');
+  await deleteEvent(c.env, id);
+  await changed(c, 'event.delete', 'event', id);
+  return c.json({ ok: true });
+});
 
 // ---- categories ----
 adminRoutes.get('/categories', async (c) => c.json({ categories: await listAdminCategories(c.env) }));

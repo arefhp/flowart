@@ -2,7 +2,7 @@
 
 For the owner. No coding needed. Everything below is done at **https://zfadavi.com/admin** (locally: http://localhost:3000/admin).
 
-> **What exists today (Milestone 1):** Overview, Artworks, Categories, About, Social links, Messages, Help, and the **Rebuild site** button. Sections 4 (Events), 5 (Bookings) and the Calendar part of section 6 describe what arrives in Milestones 2 and 3; they are not in the admin yet. If a screen is named differently in the finished app, tell Claude and update this guide.
+> **What exists today (Milestones 1 and 2):** Overview, Artworks, Categories, Events, Calendar, About, Social links, Messages, Help, and the **Rebuild site** button. Section 5 (Bookings) and refunding describe what arrives in Milestone 3; they are not in the admin yet. If a screen is named differently in the finished app, tell Claude and update this guide.
 
 ---
 
@@ -73,16 +73,26 @@ Your Instagram, Facebook and TikTok links are set here and appear in the footer 
 - Your Facebook link is a *share* link (`facebook.com/share/...`). It works, but if your page has a permanent address like `facebook.com/<your-page-name>`, using that is more stable.
 - After **Save** the site rebuilds (section 7) and the links go live in a few minutes.
 
-## 4. Workshops / events (`Admin -> Events`)
+## 4. Workshops / events (`Admin -> Events` and `Admin -> Calendar`)
 **Create**
-1. **New event**. Enter **title**, **description**, **location** (English required, Danish optional). In the description, tell people what to expect: what they will paint, whether beginners are welcome, what is included (paint, canvas, brushes, snacks), and the atmosphere you want.
-2. **Start and end time** in Copenhagen time. The site takes care of summer/winter time.
-3. **Max participants** (the number of places) and **price per person** in DKK.
-4. **Save as draft**, check it, then **Publish**. Draft events are invisible to visitors.
+1. **New event.** Fill in **Starts** and **Ends**, the **Location**, the **Number of places** and the **Price per person**, then the **title and description** (English required, Danish optional). In the description, tell people what to expect: what they will paint, whether beginners are welcome, what is included (paint, canvas, brushes, snacks), and the atmosphere you want.
+2. **Times are Copenhagen time.** Type the time as it is on the clock; the site takes care of summer and winter time. If you pick a time that does not exist (the hour skipped when the clocks go forward in March) you get a message asking you to choose another. A workshop can last at most 14 days.
+3. **Price per person** in DKK; enter **0** for a free workshop (visitors then see "Free").
+4. **Save as draft.** A new event is always a draft: visitors cannot see it. Check it, then press **Publish** on the next screen.
 
-**What visitors see:** date, time, location, price, remaining places (live), and a **Book** button. Full, cancelled and past events show the right message and no Book button.
+**The buttons on an event**
+| Button | What it does |
+|---|---|
+| **Publish** | puts a draft on the public site (the start must be in the future) |
+| **Back to draft** | takes it off the public site again (only possible while nobody has booked) |
+| **Cancel event** | visitors see it as **cancelled**, struck through, with no way to book. (Cancelling an event that already has bookings, and refunding them, arrives with online booking in Milestone 3.) |
+| **Delete event** | removes it for good. Only possible when nobody has ever booked; otherwise cancel it |
 
-**Cancel an event:** use **Cancel event**. If people have already paid, the screen shows how many bookings and how much money are affected. When you confirm, everyone is **refunded through Stripe automatically** and gets an email. If some refunds fail, they are retried automatically; check the bookings list for rows marked **Needs attention**.
+A **cancelled** or **completed** event can no longer be edited. After a workshop has ended, the site moves it to the past list by itself, and it is marked **Completed** within about 15 minutes. You cannot make the number of places lower than the places already booked, and a price change only applies to new bookings.
+
+**What visitors see:** the **Workshops** page (upcoming first, past ones below), each workshop's own page with the date, time (marked Copenhagen time), place, price per person, **places left (live)** and an **Add to calendar** button that downloads a standard calendar file, and a **Calendar** page with a month view. The home page shows the next three upcoming workshops. Full, cancelled and past workshops show the right message. Until online booking arrives (Milestone 3), the button is **Ask about a place**: it opens the contact form with the workshop's name and date filled in, and the message arrives in **Messages**.
+
+**The admin Calendar** shows every workshop by date (drafts dashed, published with a blue edge, cancelled struck through) with the places booked out of the total. Click one to edit it. **Events** lists them as Upcoming and Past and cancelled.
 
 ## 5. Bookings (`Admin -> Bookings`)
 Lists everyone who booked, with event, number of people, amount and status.
@@ -100,7 +110,7 @@ Actions: **filter** by event/status, **export CSV** (for your own records or acc
 **Cancellation policy (your decision):** customers have no accounts, so they cancel by emailing `info@zfadavi.com`. If they write **at least 24 hours before the workshop starts**, they get a **full refund**: open their booking and press **Refund**; the places are released and they get an email in their language. The refund dialog shows how many hours remain before the start. Later requests are not covered by the policy (your discretion; the app does not stop you from refunding). If **you** cancel an event, everyone who paid is refunded automatically (section 4). A booking can be made for at most 10 places at once, and unpaid places are held for 30 minutes.
 
 ## 6. Calendar and messages
-- **Calendar:** all events with the number of bookings per event, so you can see at a glance what is filling up.
+- **Calendar:** all events by date with the places booked out of the total (see section 4).
 - **Messages:** every contact-form message is saved here **and** emailed to `info@zfadavi.com` (which forwards to your own inbox). To answer, press Reply in your email. The visitor's address is set as the reply address. If you set up "Send mail as" (runbook Step 0B), choose `info@zfadavi.com` as the From address.
 
 ## 7. How changes reach the public site

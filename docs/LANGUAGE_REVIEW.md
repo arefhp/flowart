@@ -64,6 +64,23 @@ Tone: warm and personal, like an artist's studio. Informal "du" in Danish.
 | Contact error | Something went wrong. Please try again or write to info@zfadavi.com. | Noget gik galt. Prøv igen, eller skriv til info@zfadavi.com. |
 | Home / footer tagline | Fine Art and workshops in Copenhagen | Fine Art og workshops i København |
 | Footer | Follow me | Følg mig |
+| Menu | Workshops / Calendar | Workshops / Kalender |
+| Workshops page | Join me in the studio for a hands-on painting workshop. Places are limited. | Kom med i atelieret til en praktisk maleworkshop. Der er begrænset antal pladser. |
+| Workshops page | Upcoming workshops / Past workshops | Kommende workshops / Tidligere workshops |
+| Workshops page | No workshops are planned right now. Check back soon, or write to me to hear about the next one. | Der er ingen workshops planlagt lige nu. Kig forbi igen snart, eller skriv til mig for at høre om den næste. |
+| Workshop page | Date / Time / Location / Price | Dato / Tidspunkt / Sted / Pris |
+| Workshop page | {amount} per person / Free | {amount} pr. person / Gratis |
+| Workshop page | {n} places left / 1 place left / Sold out | {n} pladser tilbage / 1 plads tilbage / Udsolgt |
+| Workshop page | Cancelled / This workshop has been cancelled. / This workshop has finished. | Aflyst / Denne workshop er aflyst. / Denne workshop er afholdt. |
+| Workshop page | Copenhagen time | dansk tid |
+| Workshop page | Add to calendar | Tilføj til kalender |
+| Workshop page (until online booking) | Ask about a place | Spørg om en plads |
+| Workshop page | Online booking is coming soon. Until then, write to me to reserve a place. | Onlinebooking kommer snart. Indtil da kan du skrive til mig for at reservere en plads. |
+| Contact (from a workshop) | I would like to reserve a place at the workshop "{title}" on {date}. | Jeg vil gerne reservere en plads på workshoppen "{title}" den {date}. |
+| Contact | About the workshop | Om workshoppen |
+| Calendar | Calendar / All workshops by date. | Kalender / Alle workshops efter dato. |
+| Calendar | Previous month / Next month / No workshops this month. | Forrige måned / Næste måned / Ingen workshops i denne måned. |
+| Home page | Upcoming workshops / See all workshops | Kommende workshops / Se alle workshops |
 | Gallery filters | Filter the artworks | Filtrér værkerne |
 | Gallery filters | Category / Size / Price / Availability | Kategori / Størrelse / Pris / Tilgængelighed |
 | Gallery filters | All | Alle |

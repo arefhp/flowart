@@ -30,8 +30,8 @@ describe('translations (spec 16.1)', () => {
 
   it('Danish is actually translated (not a copy of the English)', () => {
     const same = Object.keys(enLeaves).filter((k) => enLeaves[k] === daLeaves[k]);
-    // names, "Status" and "Workshops"-style words may legitimately match
-    expect(same.length).toBeLessThan(8);
+    // names, "Status", "Workshops" and "Resin"-style words are the same in both languages
+    expect(same.length, `identical in both languages: ${same.join(', ')}`).toBeLessThan(14);
   });
 
   it('uses the reviewed Danish wording (docs/LANGUAGE_REVIEW.md)', () => {
