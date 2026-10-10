@@ -1,8 +1,8 @@
 name: deploy
 
 # Builds the static site from the live API and deploys the Worker (API + static assets).
-# Triggered by: the owner (manual), the Worker after an admin save (repository_dispatch
-# "site-rebuild"), and a push to main once CI has passed.
+# Triggered by: the owner (manual) and the Worker after an admin save (repository_dispatch
+# "site-rebuild"). The automatic deploy after a push to main is off until Milestone 4.
 # NOT yet exercised against a real Cloudflare account: that happens in Milestone 4 (runbook Step 10).
 
 on:
@@ -14,10 +14,12 @@ on:
         default: false
   repository_dispatch:
     types: [site-rebuild]
-  workflow_run:
-    workflows: [CI]
-    branches: [main]
-    types: [completed]
+  # The automatic deploy after CI passes is switched OFF until production exists (Milestone 4, runbook
+  # Step 10): with no live site yet, an automatic deploy could only fail. Re-enable by uncommenting:
+  # workflow_run:
+  #   workflows: [CI]
+  #   branches: [main]
+  #   types: [completed]
 
 permissions:
   contents: read
