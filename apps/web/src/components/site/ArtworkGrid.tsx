@@ -8,9 +8,20 @@ import { Picture } from './Picture';
  * The gallery wall: ONE cover image per artwork, shown in its true proportions (no identical
  * cards), with the wall label beneath. Clicking opens the artwork page with every image.
  */
-export function ArtworkGrid({ artworks, locale, t }: { artworks: ArtworkListItem[]; locale: Locale; t: LabelStrings }) {
+export function ArtworkGrid({
+  artworks,
+  locale,
+  t,
+  className = 'columns-1 gap-x-12 sm:columns-2 xl:columns-3',
+}: {
+  artworks: ArtworkListItem[];
+  locale: Locale;
+  t: LabelStrings;
+  /** the column layout (the filtered gallery has less room because of its sidebar) */
+  className?: string;
+}) {
   return (
-    <ul className="columns-1 gap-x-12 sm:columns-2 xl:columns-3">
+    <ul className={className}>
       {artworks.map((a, index) => (
         <li key={a.slug} className="mb-16 break-inside-avoid">
           <Link href={localePath(locale, `/artworks/${a.slug}`)} className="group block">

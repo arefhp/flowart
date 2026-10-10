@@ -107,7 +107,11 @@ test('categories can be reordered and the public filter follows the order', asyn
   await expect(page.getByText('Order saved.')).toBeVisible();
   expect((await names()).slice(0, 2)).toEqual(['Resin', 'Fine Art']);
   await page.goto('/artworks');
-  await expect(page.getByRole('group', { name: 'Category' }).getByRole('button')).toHaveText(['All', 'Resin', 'Fine Art']);
+  const labels = await page
+    .getByRole('group', { name: 'Category' })
+    .getByRole('button')
+    .evaluateAll((els) => els.map((e) => e.querySelector('span')?.textContent?.trim()));
+  expect(labels).toEqual(['All', 'Resin', 'Fine Art']);
 
   // put it back
   await page.goto('/admin/categories');

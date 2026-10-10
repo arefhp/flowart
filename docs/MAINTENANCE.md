@@ -60,8 +60,8 @@ For a developer: dependency updates arrive via Dependabot pull requests; run `np
 
 ---
 
-## 4. Gallery filters: price ranges
-The gallery filter offers three price ranges in Danish kroner: under 5,000, 5,000 to 15,000, and over 15,000. They live in one small list in `apps/web/src/lib/price-bands.ts` (`PRICE_BANDS`, amounts in øre, so 500000 is 5,000 DKK). To change the ranges, edit that list, run `npm test` and `npm run build`, and deploy. A range is only shown when an artwork falls in it, and works priced in another currency are not compared with these ranges. The words ("Under {amount}", "{from} to {to}", "Over {amount}") are in `apps/web/src/i18n/dictionary.ts`. Categories and the Small/Medium/Large size are chosen by the owner in the admin and need no code change.
+## 4. Gallery filters: the price filter is switched off
+The Artworks page has a filter sidebar (Category, Size, Available only). A **price-range filter is built and tested but NOT shown** (owner decision). To show it again, set `SHOW_PRICE_FILTER = true` in `apps/web/src/lib/price-bands.ts`, run `npm test`, `npm run test:built-html`, `npm run test:e2e` and `npm run build`, and deploy: the Price group then appears (only when at least one artwork has a price) and the price wording is sent to the browser again. While it is off, a `?price=` in the address is ignored. When on, the filter offers three price ranges in Danish kroner: under 5,000, 5,000 to 15,000, and over 15,000. They live in one small list in `apps/web/src/lib/price-bands.ts` (`PRICE_BANDS`, amounts in øre, so 500000 is 5,000 DKK). To change the ranges, edit that list, run `npm test` and `npm run build`, and deploy. A range is only shown when an artwork falls in it, and works priced in another currency are not compared with these ranges. The words ("Under {amount}", "{from} to {to}", "Over {amount}") are in `apps/web/src/i18n/dictionary.ts`. Categories and the Small/Medium/Large size are chosen by the owner in the admin and need no code change.
 
 ---
 

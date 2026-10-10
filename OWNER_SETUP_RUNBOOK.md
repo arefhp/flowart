@@ -273,7 +273,7 @@ There is **no admin password** to create. Locally the app uses a development byp
 Start the Worker (`wrangler dev`, port 8787) and web (`:3000`) per the README. Test:
 - Admin: create artwork **with** price, upload several images (the browser makes the three sizes), choose the **cover** image, view the public page.
 - Gallery: `/artworks` shows **one cover image per artwork**. Click one: the artwork page shows all its images (thumbnails, click to enlarge, arrow keys to move, Esc to close) and the full description. Try the **Ask about this work** button (it opens the contact form with the artwork's name filled in).
-- Categories and filters: in `Admin -> Categories` add a category, then give an artwork that category and a size. On `/artworks` try the Category, Size, Price and "Available only" buttons and "Clear filters". Try deleting a category that still has an artwork: you must get an error naming the artwork.
+- Categories and filters: in `Admin -> Categories` add a category, then give an artwork that category and a size. On `/artworks` try the filter sidebar (Category, Size, Available only) and "Clear filters"; on a phone it opens from a "Filters" button. Try deleting a category that still has an artwork: you must get an error naming the artwork.
 - Languages: fill in some Danish text in the admin, then use the EN | DA switch. Fields left empty in Danish show the English text. Check `/da/artworks` and `/da/about`.
 - Create artwork **without** price -> public page must show no price label, no "-", "N/A", "Free", or empty box. (Mandatory.)
 - Open `/admin/about`: check the artist statement is there, upload your portrait (JPEG/PNG/WebP, ideally portrait orientation, at least 1200 px tall), write the alt text, save, and view `/about` on desktop and phone. Remove the portrait and confirm the page still looks clean with text only.
@@ -334,7 +334,7 @@ PUBLIC
 - [ ] About page shows your portrait and statement; both editable in `/admin/about`
 - [ ] Instagram, Facebook and TikTok links show in the footer and open the right pages; editable in `/admin/social`; hiding all of them removes the section
 - [ ] Mobile layout, SEO metadata, sitemap, robots
-- [ ] Filters on the Artworks page work in English and Danish (category, size, price range, available only); the Price filter is absent when no artwork has a price
+- [ ] Filters on the Artworks page work in English and Danish (category, size with Small/Medium/Large, available only), in a sidebar (a "Filters" button on phones); there is no price filter
 - [ ] Gallery grid shows one cover per artwork; the artwork page shows every image and the full description; "Ask about this work" works
 - [ ] English and Danish: the EN | DA switch goes to the same page in the other language, Danish gaps fall back to English, and the Danish UI wording has been read by a Danish speaker
 - [ ] `/privacy` and `/terms` (English and Danish) reviewed; the 24-hour refund policy wording is the one you want

@@ -8,6 +8,7 @@ import { SiteShell } from '@/components/site/SiteShell';
 import { getDict, type Dict } from '@/i18n/dictionary';
 import { getArtwork, getArtworks, getCategories } from '@/lib/api';
 import { SITE_NAME } from '@/lib/config';
+import { SHOW_PRICE_FILTER } from '@/lib/price-bands';
 import { absoluteUrl, pageMetadata } from '@/lib/seo';
 import { excerpt, paragraphs } from '@/lib/text';
 
@@ -40,7 +41,7 @@ export async function ArtworksScreen({ locale }: { locale: Locale }) {
   return (
     <SiteShell locale={locale} path="/artworks">
       <main className="mx-auto max-w-[88rem] px-6 pt-6 md:px-10">
-        <h1 className="mb-12 text-[clamp(2.2rem,5vw,3.6rem)]">{t.artworksPage.title}</h1>
+        <h1 className="mb-10 text-[clamp(2.2rem,5vw,3.6rem)]">{t.artworksPage.title}</h1>
         {artworks.length > 0 ? (
           <>
             <ArtworksBrowser
@@ -48,8 +49,8 @@ export async function ArtworksScreen({ locale }: { locale: Locale }) {
               categories={categories}
               locale={locale}
               t={{
-                // no priced artwork: no price words are sent to the browser at all
-                filters: hasPriced ? t.filters : withoutPrice(t.filters),
+                // the price filter is switched off for now (and needs a priced artwork): no price words are sent at all
+                filters: SHOW_PRICE_FILTER && hasPriced ? t.filters : withoutPrice(t.filters),
                 label,
               }}
             />

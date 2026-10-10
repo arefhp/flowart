@@ -44,6 +44,7 @@ export const en = {
     empty: 'There are no artworks to show yet.',
   },
   filters: {
+    title: 'Filters',
     label: 'Filter the artworks',
     category: 'Category',
     size: 'Size',
@@ -139,6 +140,7 @@ export const da: Dict = {
     empty: 'Der er ingen værker at vise endnu.',
   },
   filters: {
+    title: 'Filtre',
     label: 'Filtrér værkerne',
     category: 'Kategori',
     size: 'Størrelse',

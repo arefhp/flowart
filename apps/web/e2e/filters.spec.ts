@@ -1,22 +1,47 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { SHOW_PRICE_FILTER } from '../src/lib/price-bands';
 
 // Relies on the seeded sample data (npm run seed). Shown publicly (4):
 //   Quiet Garden    Fine Art  medium  available  DKK 12,000
 //   Evening Reverie Fine Art  medium  available  (no price)
 //   Morning Light   Fine Art  small   sold       DKK 8,500
 //   Resin Tide      Resin     small   available  DKK 4,500
-// ("Work in progress" is hidden and never appears.)
+// ("Work in progress" is hidden and never appears.) No public work is Large.
 
 const cards = (page: Page) => page.locator('main ul > li');
 const titles = async (page: Page) => (await cards(page).locator('.title').allInnerTexts()).sort();
 const group = (page: Page, name: string) => page.getByRole('group', { name });
+/** The visible labels of a group's options (the small count beside each is not part of the label). */
+const optionNames = (g: Locator) => g.getByRole('button').evaluateAll((els) => els.map((e) => e.querySelector('span')?.textContent?.trim()));
+const priceFilterTest = SHOW_PRICE_FILTER ? test : test.skip;
 
-test.describe('artwork filters', () => {
+test.describe('artwork filters (sidebar)', () => {
   test('the page shows every artwork until a filter is chosen', async ({ page }) => {
     await page.goto('/artworks');
     await expect(cards(page)).toHaveCount(4);
-    for (const name of ['Category', 'Size', 'Price', 'Availability']) await expect(group(page, name)).toBeVisible();
+    for (const name of ['Category', 'Size', 'Availability']) await expect(group(page, name)).toBeVisible();
     await expect(page.getByText(/Showing \d+ of/)).toHaveCount(0); // quiet until a filter is used
+  });
+
+  test('the filters are in a sidebar beside the gallery, not above it', async ({ page }) => {
+    await page.goto('/artworks');
+    const side = await page.getByRole('complementary', { name: 'Filter the artworks' }).boundingBox();
+    const firstCard = await cards(page).first().boundingBox();
+    expect(side!.x).toBeLessThan(firstCard!.x); // to the left
+    expect(side!.y).toBeLessThan(firstCard!.y + 120); // level with the top of the gallery, not stacked above it
+    expect(side!.width).toBeLessThan(300);
+  });
+
+  test('NOT SHOWN FOR NOW: there is no Price filter', async ({ page }) => {
+    test.skip(SHOW_PRICE_FILTER, 'the price filter is switched on');
+    await page.goto('/artworks');
+    await expect(group(page, 'Price')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Under DKK|DKK 5,000/ })).toHaveCount(0);
+    // artworks that have a price still show it on their own card
+    await expect(cards(page).filter({ hasText: 'Quiet Garden' })).toContainText('DKK 12,000');
+    // a price in the address does nothing while the filter is off
+    await page.goto('/artworks?price=mid');
+    await expect.poll(() => titles(page)).toEqual(['Evening Reverie', 'Morning Light', 'Quiet Garden', 'Resin Tide']);
   });
 
   test('category: Resin shows only the resin work, the address changes, and Clear brings everything back', async ({ page }) => {
@@ -45,38 +70,40 @@ test.describe('artwork filters', () => {
     await expect(cards(page)).toHaveCount(4);
   });
 
-  test('size: Small shows the two small works', async ({ page }) => {
+  test('size ALWAYS offers Small, Medium and Large, even when nothing is large', async ({ page }) => {
     await page.goto('/artworks');
-    await group(page, 'Size').getByRole('button', { name: 'Small' }).click();
+    const size = group(page, 'Size');
+    expect(await optionNames(size)).toEqual(['All', 'Small', 'Medium', 'Large']);
+
+    await size.getByRole('button', { name: 'Small' }).click();
     await expect.poll(() => titles(page)).toEqual(['Morning Light', 'Resin Tide']);
-    // a size nobody has is not offered at all, so there is never an empty choice
-    await expect(group(page, 'Size').getByRole('button')).toHaveText(['All', 'Small', 'Medium']);
+    await size.getByRole('button', { name: 'Medium' }).click();
+    await expect.poll(() => titles(page)).toEqual(['Evening Reverie', 'Quiet Garden']);
+
+    // Large exists as a choice; nothing is large yet, so it says so and offers a way back
+    await size.getByRole('button', { name: 'Large' }).click();
+    await expect(page.getByText('No artworks match these filters.')).toBeVisible();
+    await expect(cards(page)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Clear filters' }).first().click();
+    await expect(cards(page)).toHaveCount(4);
   });
 
-  test('price: only the ranges that contain an artwork are offered, and works without a price never match one', async ({ page }) => {
+  test('each option shows how many artworks it has', async ({ page }) => {
     await page.goto('/artworks');
-    const price = group(page, 'Price');
-    await expect(price.getByRole('button')).toHaveText(['All', 'Under DKK 5,000', 'DKK 5,000 to DKK 15,000']); // no "Over", nothing costs that much
-
-    await price.getByRole('button', { name: 'Under DKK 5,000' }).click();
-    await expect.poll(() => titles(page)).toEqual(['Resin Tide']);
-
-    await price.getByRole('button', { name: 'DKK 5,000 to DKK 15,000' }).click();
-    await expect.poll(() => titles(page)).toEqual(['Morning Light', 'Quiet Garden']);
-    // "Evening Reverie" has no price: it is in no price range, and its card shows no price at all
-    await page.getByRole('button', { name: 'Clear filters' }).click();
-    const reverie = cards(page).filter({ hasText: 'Evening Reverie' });
-    expect((await reverie.innerText()).toLowerCase()).not.toMatch(/dkk|price|\b0\b/);
+    const counts = async (name: string) =>
+      group(page, name).getByRole('button').evaluateAll((els) => els.map((e) => e.querySelectorAll('span')[1]?.textContent?.trim()));
+    expect(await counts('Category')).toEqual(['4', '3', '1']); // All, Fine Art, Resin
+    expect(await counts('Size')).toEqual(['4', '2', '2', '0']); // All, Small, Medium, Large
   });
 
-  test('filters combine: category + price', async ({ page }) => {
+  test('filters combine: category + size', async ({ page }) => {
     await page.goto('/artworks');
     await group(page, 'Category').getByRole('button', { name: 'Fine Art' }).click();
-    await group(page, 'Price').getByRole('button', { name: 'DKK 5,000 to DKK 15,000' }).click();
-    await expect.poll(() => titles(page)).toEqual(['Morning Light', 'Quiet Garden']);
+    await group(page, 'Size').getByRole('button', { name: 'Small' }).click();
+    await expect.poll(() => titles(page)).toEqual(['Morning Light']);
     await expect(page).toHaveURL(/category=fine-art/);
-    await expect(page).toHaveURL(/price=mid/);
-    await expect(page.getByText('Showing 2 of 4')).toBeVisible();
+    await expect(page).toHaveURL(/size=small/);
+    await expect(page.getByText('Showing 1 of 4')).toBeVisible();
   });
 
   test('availability: "Available only" hides the sold work', async ({ page }) => {
@@ -105,12 +132,12 @@ test.describe('artwork filters', () => {
 
   test('nonsense in the address is ignored', async ({ page }) => {
     await page.goto('/artworks?category=nope&size=huge&price=free&available=1');
-    // only "available=1" is a real choice; the rest are ignored. (The page first shows every artwork,
-    // then applies the address once it has loaded, so wait for that.)
+    // only "available=1" is a real choice. (The page first shows every artwork, then applies the
+    // address once it has loaded, so wait for that.)
     await expect.poll(() => titles(page)).toEqual(['Evening Reverie', 'Quiet Garden', 'Resin Tide']);
   });
 
-  test('the filter buttons are keyboard friendly with at least a 44px touch target', async ({ page }) => {
+  test('the options are keyboard friendly with at least a 44px touch target', async ({ page }) => {
     await page.goto('/artworks');
     const resin = group(page, 'Category').getByRole('button', { name: 'Resin' });
     const box = await resin.boundingBox();
@@ -129,20 +156,49 @@ test.describe('artwork filters', () => {
 
   test('the filters speak Danish on the Danish page, with names falling back to English', async ({ page }) => {
     await page.goto('/da/artworks');
-    for (const name of ['Kategori', 'Størrelse', 'Pris', 'Tilgængelighed']) await expect(group(page, name)).toBeVisible();
-    await expect(group(page, 'Størrelse').getByRole('button', { name: 'Lille' })).toBeVisible();
-    await expect(group(page, 'Størrelse').getByRole('button', { name: 'Mellemstor' })).toBeVisible();
+    for (const name of ['Kategori', 'Størrelse', 'Tilgængelighed']) await expect(group(page, name)).toBeVisible();
+    await expect(group(page, 'Pris')).toHaveCount(0);
+    expect(await optionNames(group(page, 'Størrelse'))).toEqual(['Alle', 'Lille', 'Mellemstor', 'Stor']);
     await expect(group(page, 'Tilgængelighed').getByRole('button', { name: 'Kun tilgængelige' })).toBeVisible();
-    await expect(group(page, 'Kategori').getByRole('button', { name: 'Resin' })).toBeVisible(); // no Danish name: English one
-    await group(page, 'Pris').getByRole('button', { name: /Under/ }).click();
-    await expect(page.getByText('Viser 1 af 4')).toBeVisible();
+    await expect(group(page, 'Kategori').getByRole('button', { name: 'Resin' })).toBeVisible(); // no Danish name: the English one
+    await group(page, 'Størrelse').getByRole('button', { name: 'Lille' }).click();
+    await expect(page.getByText('Viser 2 af 4')).toBeVisible();
     await page.getByRole('button', { name: 'Ryd filtre' }).click();
     await expect(cards(page)).toHaveCount(4);
   });
 
-  test('the filtered gallery still has every artwork in the page for people without scripts', async ({ page }) => {
+  test('the gallery has every artwork in the page for people without scripts', async ({ page }) => {
     const html = await (await page.request.get('/artworks')).text();
     for (const title of ['Quiet Garden', 'Evening Reverie', 'Morning Light', 'Resin Tide']) expect(html).toContain(title);
+  });
+
+  priceFilterTest('price filter (only when switched on): ranges, combinations and no match for unpriced work', async ({ page }) => {
+    await page.goto('/artworks');
+    const price = group(page, 'Price');
+    await expect(price.getByRole('button')).toHaveCount(3);
+    await price.getByRole('button', { name: 'Under DKK 5,000' }).click();
+    await expect.poll(() => titles(page)).toEqual(['Resin Tide']);
+  });
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('the filters fold away behind a "Filters" button and open on demand', async ({ page }) => {
+    await page.goto('/artworks');
+    await expect(cards(page)).toHaveCount(4);
+    const toggle = page.getByRole('button', { name: /^Filters/ });
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(group(page, 'Category')).toBeHidden(); // folded away: the gallery comes first
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await group(page, 'Category').getByRole('button', { name: 'Resin' }).click();
+    await expect(cards(page)).toHaveCount(1);
+    await expect(toggle).toContainText('1'); // one filter is on
+    await page.getByRole('button', { name: 'Clear filters' }).click();
+    await expect(cards(page)).toHaveCount(4);
   });
 });
 
@@ -165,6 +221,6 @@ test.describe('wording and About', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Om mig' })).toBeVisible();
     await expect(page.getByText('persisk miniaturemaleri')).toBeVisible();
     await expect(page.getByText('Persian miniature painting')).toHaveCount(0);
-    expect((await page.locator('main .prose-artist p').count())).toBe(4);
+    expect(await page.locator('main .prose-artist p').count()).toBe(4);
   });
 });

@@ -120,19 +120,23 @@
       background-color 0.15s,
       color 0.15s;
   }
-  .btn:hover {
-    background: var(--color-ink);
-    color: var(--color-wall);
+  @media (hover: hover) {
+    .btn:hover {
+      background: var(--color-ink);
+      color: var(--color-wall);
+    }
   }
   .btn-primary {
     background: var(--color-lapis);
     border-color: var(--color-lapis);
     color: #fff;
   }
-  .btn-primary:hover {
-    background: var(--color-lapis-deep);
-    border-color: var(--color-lapis-deep);
-    color: #fff;
+  @media (hover: hover) {
+    .btn-primary:hover {
+      background: var(--color-lapis-deep);
+      border-color: var(--color-lapis-deep);
+      color: #fff;
+    }
   }
   .btn[disabled] {
     opacity: 0.55;

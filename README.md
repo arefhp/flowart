@@ -3,7 +3,7 @@
 Art portfolio + workshop booking site for a Copenhagen-based artist.
 
 - **Gallery:** the grid shows one cover image per artwork; clicking it opens the artwork page with all its images, the full description, and an "Ask about this work" button. Price is optional — if the admin leaves it empty, no price is shown anywhere on the public site.
-- **Categories and filters:** the owner defines categories (starting with Fine Art and Resin) and picks a category and a size (Small, Medium, Large) for each artwork. Visitors filter the gallery by category, size, price range and availability. The Price filter only exists when some artwork has a price.
+- **Categories and filters:** the owner defines categories (starting with Fine Art and Resin) and picks a category and a size (Small, Medium, Large) for each artwork. Visitors filter the gallery from a sidebar by category, size (Small, Medium, Large) and availability. A price-range filter is built but switched off for now.
 - **Languages:** English (root) and Danish (`/da/`) from day one; Danish text is optional per field and falls back to English. The About statement has a Danish version from the start.
 - **Workshops/events:** date/time, capacity, Stripe Checkout payment, confirmation, calendar view and `.ics` download.
 - **Contact:** contact form with spam protection.

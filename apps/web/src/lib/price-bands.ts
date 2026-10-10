@@ -31,3 +31,10 @@ export function inBand(a: Pick<ArtworkListItem, 'price_minor' | 'currency'>, ban
 export function usableBands(artworks: Array<Pick<ArtworkListItem, 'price_minor' | 'currency'>>): PriceBand[] {
   return PRICE_BANDS.filter((band) => artworks.some((a) => inBand(a, band)));
 }
+
+/**
+ * The price filter is built and tested but NOT shown to visitors for now (owner decision). Set this
+ * to true to show it again: the Price group, its ranges and the price words in the page data come
+ * back together, and only appear when at least one artwork has a price.
+ */
+export const SHOW_PRICE_FILTER = false;

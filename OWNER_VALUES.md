@@ -93,7 +93,7 @@ Files to give Claude: put them in the repo's `input/` folder (do not paste them 
 | Gallery | The grid shows one cover image per artwork; clicking opens the artwork page with all its images and the full description | decided |
 | Categories | Defined by you in the admin (start: Fine Art, Resin). One category per artwork; a category with artworks cannot be deleted | decided |
 | Size | Small / Medium / Large, chosen by you for every artwork | decided |
-| Gallery filters | Category, Size, Price range, Available only. The Price filter only appears when an artwork has a price. Ranges: under 5,000, 5,000 to 15,000, over 15,000 DKK | decided |
+| Gallery filters | A sidebar with Category, Size (always Small, Medium, Large) and Available only. The **price filter is built but switched off for now**; it can be turned on later (`docs/MAINTENANCE.md`) | decided |
 | About text in Danish | Starts as a translation of your English text; reword it in `/admin/about` | decided |
 | Workers Free 10 ms CPU limit | Accepted for launch; how to raise it is in `docs/MAINTENANCE.md` | decided |
 

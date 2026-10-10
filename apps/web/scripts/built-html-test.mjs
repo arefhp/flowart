@@ -103,6 +103,9 @@ const allHtml = (dir = outDir) =>
     return statSync(f).isDirectory() ? (n === '_next' ? [] : allHtml(f)) : f.endsWith('.html') ? [f] : [];
   });
 
+// the price filter switch lives in the source; the build output must agree with it
+const SHOW_PRICE_FILTER = /SHOW_PRICE_FILTER\s*=\s*true/.test(readFileSync(join(webDir, 'src', 'lib', 'price-bands.ts'), 'utf8'));
+
 let failures = 0;
 function check(name, condition, detail = '') {
   if (condition) console.log(`  ok   ${name}`);
@@ -143,16 +146,22 @@ try {
 
   // ---- gallery filters (category, size, price, availability) ----
   for (const [lang, base, words] of [
-    ['en', '', { category: 'Category', size: 'Size', price: 'Price', avail: 'Available only', small: 'Small', large: 'Large' }],
-    ['da', '/da', { category: 'Kategori', size: 'Størrelse', price: 'Pris', avail: 'Kun tilgængelige', small: 'Lille', large: 'Stor' }],
+    ['en', '', { category: 'Category', size: 'Size', price: 'Price', avail: 'Available only', small: 'Small', medium: 'Medium', large: 'Large' }],
+    ['da', '/da', { category: 'Kategori', size: 'Størrelse', price: 'Pris', avail: 'Kun tilgængelige', small: 'Lille', medium: 'Mellemstor', large: 'Stor' }],
   ]) {
     const list = read(`${base}/artworks.html`.replace(/^\//, ''));
     const visible = list.replace(/<script[\s\S]*?<\/script>/g, '');
     check(`[${lang}] artworks page has the category filter with both categories`, visible.includes(words.category) && /Fine Art/.test(visible) && /Resin/.test(visible));
-    check(`[${lang}] artworks page has the size filter`, visible.includes(words.size) && visible.includes(words.small) && visible.includes(words.large));
-    check(`[${lang}] a price filter exists because an artwork has a price`, visible.includes(words.price) && /12[.,]000|5[.,]000/.test(visible) === true);
+    check(`[${lang}] size ALWAYS offers Small, Medium and Large`, visible.includes(words.size) && visible.includes(words.small) && visible.includes(words.medium) && visible.includes(words.large));
+    check(`[${lang}] the filters are a sidebar (an aside beside the gallery)`, /<aside[^>]*aria-label=/.test(visible));
+    if (SHOW_PRICE_FILTER) {
+      check(`[${lang}] a price filter exists because an artwork has a price`, /id="f-price"/.test(visible) && visible.includes(words.price));
+    } else {
+      check(`[${lang}] NO price filter is shown (switched off), though one artwork has a price`, !/id="f-price"/.test(visible) && !/Under DKK|Under \d|Under 5/.test(visible));
+      check(`[${lang}] no price-filter wording is sent to the browser while it is off`, !/Under \{amount\}|\{from\} to \{to\}|Over \{amount\}|\{from\} til \{to\}/.test(list));
+    }
     check(`[${lang}] availability filter exists (one artwork is sold)`, visible.includes(words.avail));
-    check(`[${lang}] filter buttons are real buttons with aria-pressed`, (visible.match(/<button type="button" aria-pressed=/g) ?? []).length >= 6);
+    check(`[${lang}] filter buttons are real buttons with aria-pressed`, (visible.match(/<button type="button" aria-pressed=/g) ?? []).length >= 8);
   }
   check('artwork page links to its category filter', /href="\/artworks\?category=fine-art"/.test(en));
   check('Danish artwork page links to the Danish category filter', /href="\/da\/artworks\?category=fine-art"/.test(read('da/artworks/quiet-piece.html')));
