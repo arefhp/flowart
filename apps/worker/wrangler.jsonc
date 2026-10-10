@@ -1,0 +1,59 @@
+{
+  // One Worker serves the static site (assets) and the API (/api/*).
+  // Secrets are NEVER in this file: use `wrangler secret put` (production) and .dev.vars (local).
+  // .dev.vars overrides the "vars" below when running `wrangler dev`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zakereh-art",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+
+  "assets": {
+    "directory": "../web/out",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // The API (and, locally only, /media/*) runs the Worker; everything else is served as static files.
+    "run_worker_first": ["/api/*", "/media/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "zakereh-art-db",
+      "database_id": "7f7524db-8f36-414a-8f67-119b0422996d",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "zakereh-media" },
+    { "binding": "PRIVATE", "bucket_name": "zakereh-private" }
+  ],
+
+  "triggers": {
+    // every 15 minutes: send queued email, retry failed R2 deletes, catch up on site rebuilds
+    // daily 03:17 UTC: purge old rate-limit rows and old contact messages
+    "crons": ["*/15 * * * *", "17 3 * * *"]
+  },
+
+  "observability": { "enabled": true },
+
+  // Non-secret production values. The custom domain route (zfadavi.com) is added in Milestone 4.
+  "vars": {
+    "APP_ENV": "production",
+    "PUBLIC_SITE_URL": "https://zfadavi.com",
+    "MEDIA_BASE_URL": "https://media.zfadavi.com",
+    "EMAIL_DRIVER": "resend",
+    "EMAIL_FROM_ADDRESS": "info@zfadavi.com",
+    "EMAIL_FROM_NAME": "Zakereh Art",
+    "EMAIL_REPLY_TO": "info@zfadavi.com",
+    "OWNER_NOTIFICATION_EMAIL": "info@zfadavi.com",
+    "GITHUB_REPO": "arefhp/flowart",
+    "CONTACT_RETENTION_MONTHS": "12",
+    "BOOKING_MAX_PARTICIPANTS": "10",
+    "BOOKING_HOLD_MINUTES": "30",
+    // Filled in during Milestone 4 (Cloudflare Access application):
+    "ACCESS_TEAM_NAME": "",
+    "ACCESS_AUD": "",
+    "ADMIN_EMAILS": ""
+  }
+}

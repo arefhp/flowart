@@ -1,0 +1,36 @@
+{
+  "name": "@flowart/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "prebuild": "node scripts/clean-fetch-cache.mjs",
+    "build": "next build && node scripts/write-build-info.mjs",
+    "start": "npx serve out",
+    "test": "vitest run",
+    "test:built-html": "node scripts/built-html-test.mjs",
+    "test:e2e": "playwright test",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@flowart/shared": "*",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "next": "^16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "^26.0.0",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.3.3",
+    "vitest": "~4.1.11"
+  }
+}

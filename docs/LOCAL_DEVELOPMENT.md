@@ -33,9 +33,11 @@ This creates:
 Then create the local database and sample data:
 ```powershell
 npm run migrate:local  # creates the local SQLite database from the migrations
-npm run seed           # sample artworks, an event, the About page text and the social links
+npm run seed           # four sample artworks (one without a price, one sold, one hidden) and the About portrait
 ```
-Local data lives in `.wrangler/state` (git-ignored). To start over: stop the servers, delete that folder, and run the two commands again.
+The About text and the three social links are part of the database migration, so they are there as soon as `migrate:local` has run. Events arrive in Milestone 2.
+
+Local data lives in `apps/worker/.wrangler/state` (git-ignored). To start over: stop the servers, delete that folder, and run the two commands again. `npm run seed` is safe to run twice: it skips what already exists.
 
 **Your own photos:** the `input/` folder (git-ignored) holds your portrait (`about.jpeg`) and painting photos. `npm run seed` uses them as the About portrait and as sample artworks (several with more than one image so you can try covers, thumbnails and the viewer). If `input/` is empty or missing, the seed makes placeholder images instead.
 
@@ -71,6 +73,8 @@ You can browse the gallery, use the admin (create artworks, upload images, edit 
 |---|---|---|---|
 | `APP_ENV` | no | yes | `local` |
 | `PUBLIC_SITE_URL` | no | yes | `http://localhost:3000` (production: `https://zfadavi.com`). Stripe success/cancel links are built from this |
+| `MEDIA_BASE_URL` | no | yes | `http://localhost:8787/media` (production `https://media.zfadavi.com`). Where image addresses point |
+| `CONTACT_RETENTION_MONTHS` | no | no | `12`. Contact messages older than this are deleted by the daily cleanup |
 | `ADMIN_DEV_BYPASS` | no | yes | `true`. **Local only**: the Worker refuses to start in production with it set |
 | `ADMIN_EMAILS` | no | no | your email, comma separated. Production allowlist; optional locally |
 | `ACCESS_TEAM_NAME`, `ACCESS_AUD` | no | no | production only. Zero Trust dashboard (runbook Step 10) |
@@ -87,8 +91,11 @@ You can browse the gallery, use the admin (create artworks, upload images, edit 
 ### `apps/web/.env.local` (website, public values only)
 | Variable | Local value |
 |---|---|
-| `NEXT_PUBLIC_API_BASE_URL` | empty (the dev server proxies `/api` to the Worker) |
-| `NEXT_PUBLIC_MEDIA_BASE_URL` | `http://localhost:8787/media` |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` (production `https://zfadavi.com`). Used for canonical links and the sitemap |
+| `BUILD_API_BASE_URL` | `http://localhost:8787`. The API the static site is built from. The build fails loudly if it cannot be reached |
+| `ALLOW_EMPTY_BUILD` | optional. `1` only for the very first deploy, before any API exists |
+
+The browser never needs an API address (it always calls the same origin), and image addresses come from the API, which builds them from the Worker's `MEDIA_BASE_URL`.
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | `1x00000000000000000000AA` (always passes; confirm at https://developers.cloudflare.com/turnstile/troubleshooting/testing/) |
 
 ### Check your setup
@@ -140,7 +147,10 @@ Check the current test cards at https://docs.stripe.com/testing.
 |---|---|
 | `check-env` reports a missing variable | open `apps/worker/.dev.vars`, read the comment above that variable |
 | Admin pages say "Your session ended" | the Worker is not running, or `APP_ENV` is not `local` / `ADMIN_DEV_BYPASS` is not `true` |
-| Images do not load | `NEXT_PUBLIC_MEDIA_BASE_URL` must be `http://localhost:8787/media` and the Worker must be running |
+| Images do not load | `MEDIA_BASE_URL` in `apps/worker/.dev.vars` must be `http://localhost:8787/media` and the Worker must be running. After changing it, restart `npm run dev` |
+| A new artwork's public page is missing or shows an error | an artwork is public only when its status is not Hidden **and** it has at least one image. In development, a hidden or image-less artwork's page shows an error instead of the friendly 404; that is expected and does not happen in production |
+| `npm run build` says it cannot reach the API | start the Worker first (`npm run dev:worker`) so there is an API to build from |
+| `npm run build` fails with "resource busy or locked" on `out` | an old `wrangler dev` from an earlier version holds the folder: stop all dev servers and try again |
 | Contact form says verification failed | `TURNSTILE_SECRET_KEY` (backend) and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (website) must be the matching **test pair** or a matching real pair |
 | Booking stays "pending" after paying | `stripe listen` not running, or `STRIPE_WEBHOOK_SECRET` is not the value it printed |
 | `Port 8787 / 3000 already in use` | close the other copy of the server |
@@ -152,3 +162,19 @@ Check the current test cards at https://docs.stripe.com/testing.
 - Never commit `.dev.vars`, `.env`, `.env.local`, database exports or `.wrangler/`. The repo's `.gitignore` and gitleaks CI check cover this, but you are the last line of defence.
 - Use **test** Stripe keys locally. Live keys are only ever set as production Worker secrets.
 - If a key leaks: revoke it in the provider's dashboard (Resend -> API Keys, Stripe -> API keys -> Roll key, Turnstile -> Rotate secret key), create a new one, and update `.dev.vars` / `wrangler secret put`.
+
+## 12. Tests, and checking a production-style build
+```powershell
+npm run typecheck       # types in all three packages
+npm run lint            # code style and common mistakes
+npm test                # unit tests (shared, Worker with real local D1/R2, website)
+npm run test:built-html # builds the site against a mock API and checks the generated HTML (the no-price rule, About, social links, languages)
+npm run test:e2e        # drives a real browser through the site and the admin (needs the seeded sample data; starts the servers itself)
+```
+`npm run test:built-html` and `npm run build` both use the `apps/web/.next` folder, so stop `npm run dev` first. The first time you run the end-to-end tests, install the browser once: `npx playwright install chromium`.
+
+To see the site the way Cloudflare will serve it (static files, the API in front, the 404 page, security headers), with the Worker running (`npm run dev:worker`):
+```powershell
+npm run build           # builds the static site into apps/web/out
+npm run preview -w apps/worker   # serves it on http://localhost:8788
+```

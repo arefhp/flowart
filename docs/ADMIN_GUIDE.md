@@ -2,7 +2,7 @@
 
 For the owner. No coding needed. Everything below is done at **https://zfadavi.com/admin** (locally: http://localhost:3000/admin).
 
-> This guide describes the admin area specified in `CLAUDE_IMPLEMENTATION_INSTRUCTIONS.md`. If a screen is named differently in the finished app, tell Claude and update this guide.
+> **What exists today (Milestone 1):** Overview, Artworks, About, Social links, Messages, Help, and the **Rebuild site** button. Sections 4 (Events), 5 (Bookings) and the Calendar part of section 6 describe what arrives in Milestones 2 and 3; they are not in the admin yet. If a screen is named differently in the finished app, tell Claude and update this guide.
 
 ---
 
@@ -26,7 +26,7 @@ Only email addresses on your allow list can sign in. Anyone else gets a refusal 
 ## 2. Artworks (`Admin -> Artworks`)
 **Add an artwork**
 1. **New artwork**.
-2. Fill in: **Title** (required), **Description**, **Medium** (e.g. oil on canvas), **Year**, and the size (**width / height / depth in cm**). Leave out any size you don't want to show; the page only shows the sizes you fill in. Each text field has an **English** box and a **Danish** box. English is required; **Danish is optional**: if you leave it empty, Danish visitors see the English text.
+2. Fill in: **Title** (required), **Description**, **Materials and technique** (e.g. oil on canvas), **Year**, and the size (**width / height / depth in cm**). Leave out any size you don't want to show; the page only shows the sizes you fill in. Each text field has an **English** box and a **Danish** box. English is required; **Danish is optional**: if you leave it empty, Danish visitors see the English text.
 3. **Price (optional).** Fill it in to show a price. **Leave it empty to show no price at all**: nothing is displayed, not even a dash. Enter `0` only if the work is truly free.
 4. **Status:** 
    | Status | What visitors see |

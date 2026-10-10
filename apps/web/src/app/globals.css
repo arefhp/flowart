@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+
+/*
+ * Quiet gallery. Limewash wall, blue-black ink, one accent (lapis) used only for the main
+ * action and keyboard focus. Newsreader (serif, optical sizes) carries the artist's voice and
+ * headings; Instrument Sans carries the interface.
+ */
+@theme {
+  --color-wall: #f4f5f2;
+  --color-paper: #fbfbf9;
+  --color-ink: #1e2430;
+  --color-stone: #5f646c;
+  --color-hairline: #d8dad5;
+  --color-lapis: #2d4a7c;
+  --color-lapis-deep: #223a63;
+  --color-alert: #8a2b24;
+  --font-serif: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Instrument Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--color-wall);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    min-height: 100vh;
+    margin: 0;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 380;
+    line-height: 1.12;
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-lapis);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-lapis) 22%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* the artist's own words: serif, longer leading, about 62 characters per line */
+  .prose-artist {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    line-height: 1.7;
+    max-width: 38rem;
+  }
+  .prose-artist p + p {
+    margin-top: 1.1em;
+  }
+  .prose-plain {
+    max-width: 40rem;
+  }
+  .prose-plain h2 {
+    font-size: 1.5rem;
+    margin-top: 2.2rem;
+    margin-bottom: 0.6rem;
+  }
+  .prose-plain p,
+  .prose-plain ul {
+    margin-top: 0.8rem;
+  }
+  .prose-plain ul {
+    padding-left: 1.2rem;
+    list-style: disc;
+  }
+  .prose-plain strong {
+    font-weight: 600;
+  }
+
+  /* museum wall label: the title, then the facts, set small and quiet */
+  .wall-label {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-stone);
+  }
+  .wall-label .title {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--color-ink);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.55rem 1.25rem;
+    border: 1px solid var(--color-ink);
+    background: transparent;
+    color: var(--color-ink);
+    font: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .btn:hover {
+    background: var(--color-ink);
+    color: var(--color-wall);
+  }
+  .btn-primary {
+    background: var(--color-lapis);
+    border-color: var(--color-lapis);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--color-lapis-deep);
+    border-color: var(--color-lapis-deep);
+    color: #fff;
+  }
+  .btn[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .field {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #aeb2ab;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font: inherit;
+  }
+  .field:focus-visible {
+    outline-offset: 1px;
+  }
+  .link {
+    text-decoration: underline;
+    text-decoration-color: var(--color-hairline);
+    text-underline-offset: 0.25em;
+    text-decoration-thickness: 1px;
+  }
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
+}

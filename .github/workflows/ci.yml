@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and Worker tests
+        run: npm test
+
+      # Real `next build` against a mock API; checks the no-price rule on the generated HTML.
+      - name: Built-HTML tests
+        run: npm run test:built-html
+
+      - name: Install browser for end-to-end tests
+        run: npx playwright install --with-deps chromium
+
+      # The end-to-end tests run the real local stack (Worker + Next) on seeded sample data.
+      # CI has no input/ folder, so the seed uses generated placeholder images.
+      - name: Prepare local stack
+        run: |
+          npm run setup
+          npm run migrate:local
+          npm run seed
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: apps/web/test-results
+          retention-days: 7
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Shipped dependencies must have no high-severity advisories.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      # Dev tooling is reported but does not block (it never reaches visitors).
+      - name: Audit all dependencies (informational)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for committed secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

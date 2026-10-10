@@ -1,0 +1,84 @@
+# apps/worker/.dev.vars.example
+#
+# Copy to apps/worker/.dev.vars (npm run setup does this for you and never overwrites an existing file).
+# .dev.vars is git-ignored. NEVER commit it and NEVER paste real secrets into chat.
+#
+# This site boots with ZERO accounts: everything below is pre-filled with safe local values.
+# Add a real key only when you want to test that feature (Stripe, Resend).
+# Legend:  REQUIRED = needed to boot.  OPTIONAL = feature degrades with a clear message.
+#          SECRET = never commit, never put in a NEXT_PUBLIC_ variable.
+
+# ---------------------------------------------------------------------------
+# App
+# ---------------------------------------------------------------------------
+# REQUIRED (local, production). 'local' or 'production'. Production values live in wrangler.jsonc.
+APP_ENV=local
+# REQUIRED (local, production). Public address of the website. Used for the CSRF Origin check and
+# Stripe redirect links. Production: https://zfadavi.com
+PUBLIC_SITE_URL=http://localhost:3000
+# REQUIRED (local, production). Base URL of the image host. Locally the Worker serves /media/* from
+# its local R2 emulation. Production: https://media.zfadavi.com
+MEDIA_BASE_URL=http://localhost:8787/media
+# OPTIONAL. How many months contact messages are kept before the daily cleanup deletes them.
+CONTACT_RETENTION_MONTHS=12
+
+# ---------------------------------------------------------------------------
+# Access / Admin
+# ---------------------------------------------------------------------------
+# REQUIRED locally. 'true' skips the admin login. ONLY honoured when APP_ENV=local; the Worker
+# refuses to serve in production if this is set.
+ADMIN_DEV_BYPASS=true
+# OPTIONAL locally, REQUIRED in production. Comma-separated admin email allowlist.
+ADMIN_EMAILS=
+# OPTIONAL locally, REQUIRED in production. Cloudflare Zero Trust team name (the part before
+# .cloudflareaccess.com). Zero Trust -> Settings -> Custom pages. Example: zakereh-art
+ACCESS_TEAM_NAME=
+# OPTIONAL locally, REQUIRED in production. Access application Audience (AUD) tag. Zero Trust ->
+# Access -> Applications -> zakereh-art-admin -> Overview. Example: 32 hex characters
+ACCESS_AUD=
+
+# ---------------------------------------------------------------------------
+# Email
+# ---------------------------------------------------------------------------
+# REQUIRED. 'console' prints emails in the Worker terminal (local default). 'resend' sends real mail.
+EMAIL_DRIVER=console
+# REQUIRED. Sender address, display name and reply-to. Resend verifies the domain zfadavi.com.
+EMAIL_FROM_ADDRESS=info@zfadavi.com
+EMAIL_FROM_NAME=Zakereh Art
+EMAIL_REPLY_TO=info@zfadavi.com
+# REQUIRED. Where contact messages and booking alerts go (forwards to the owner's inbox).
+OWNER_NOTIFICATION_EMAIL=info@zfadavi.com
+# SECRET. OPTIONAL locally (only when EMAIL_DRIVER=resend), REQUIRED in production.
+# https://resend.com/api-keys -> Create API Key -> Sending access. Example format: re_AbCd1234...
+RESEND_API_KEY=re_xxx
+
+# ---------------------------------------------------------------------------
+# Turnstile (bot protection on the contact and booking forms)
+# ---------------------------------------------------------------------------
+# SECRET. REQUIRED. Locally this is Cloudflare's published always-pass TEST secret (the Worker
+# accepts it only when APP_ENV=local). Production: Cloudflare -> Turnstile -> widget zakereh-art
+# -> Secret key, set with `npx wrangler secret put TURNSTILE_SECRET_KEY`.
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+
+# ---------------------------------------------------------------------------
+# Rebuild trigger (admin saves rebuild the static site through GitHub Actions)
+# ---------------------------------------------------------------------------
+# OPTIONAL. owner/name of the GitHub repository. Pre-filled.
+GITHUB_REPO=arefhp/flowart
+# SECRET. OPTIONAL locally (without it the rebuild is skipped and the admin says so), REQUIRED in
+# production. Fine-grained token limited to this repo, permission Actions: Read and write.
+# GitHub -> Settings -> Developer settings -> Fine-grained tokens. Example format: github_pat_xxx
+GITHUB_DISPATCH_TOKEN=
+
+# ---------------------------------------------------------------------------
+# Booking and Stripe (used from Milestone 3; listed here so the file is complete)
+# ---------------------------------------------------------------------------
+# OPTIONAL. Maximum places in one booking, and how long unpaid places are held (minutes).
+BOOKING_MAX_PARTICIPANTS=10
+BOOKING_HOLD_MINUTES=30
+# SECRET. OPTIONAL until Milestone 3. Stripe sandbox/test key: https://dashboard.stripe.com/test/apikeys
+# Example format: sk_test_xxx
+STRIPE_SECRET_KEY=sk_test_xxx
+# SECRET. OPTIONAL until Milestone 3. Printed by `stripe listen` (local) or created in the Stripe
+# dashboard (production). Example format: whsec_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx

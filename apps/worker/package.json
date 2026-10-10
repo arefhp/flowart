@@ -1,0 +1,30 @@
+{
+  "name": "@flowart/worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/ensure-assets-dir.mjs && wrangler dev --port 8787 --assets .local-assets",
+    "preview": "node scripts/ensure-assets-dir.mjs && wrangler dev --port 8788",
+    "migrate:local": "wrangler d1 migrations apply DB --local",
+    "migrate:prod": "wrangler d1 migrations apply DB --remote",
+    "seed": "tsx scripts/seed.ts",
+    "test": "node scripts/verify-env-example.mjs && vitest run",
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types"
+  },
+  "dependencies": {
+    "@flowart/shared": "*",
+    "hono": "^4.13.13",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.4.0",
+    "@cloudflare/workers-types": "^5.20261010.1",
+    "@types/node": "^22.20.5",
+    "sharp": "^0.35.5",
+    "tsx": "^4.20.0",
+    "vitest": "~4.1.11",
+    "wrangler": "^4.149.0"
+  }
+}

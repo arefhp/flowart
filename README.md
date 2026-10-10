@@ -46,7 +46,9 @@ npm run dev            # site on http://localhost:3000, API on :8787, admin at /
 Add a Stripe **test** key / Resend key only for the features that need them. Full details: [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md). Managing the site: [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md).
 
 ## Status
-Planning complete; implementation starts with Milestone 1 (gallery + admin). The quick start above describes the commands Milestone 1 will create; they do not exist until it is built.
+**Milestone 1 (gallery + admin) is built:** the bilingual gallery (cover images, artwork pages with a viewer, "Ask about this work"), the About page, social links, the contact form, and the admin for all of it, with tests. Next: Milestone 2 (events + calendar), Milestone 3 (booking + payments), Milestone 4 (production hardening and launch). The quick start above works as written.
+
+Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:built-html`, `npm run test:e2e` (see [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md), section 12).
 
 Workflow: work happens on `main`. After each milestone Claude verifies it, commits locally, and gives the owner a run-and-check list; the owner replies "approved" before it is pushed and the next milestone starts (see section 21.1 of the implementation instructions). Stripe runs in the owner's sandbox (test keys) until launch.
 

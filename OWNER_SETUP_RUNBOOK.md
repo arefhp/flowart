@@ -260,7 +260,7 @@ Claude generates commented templates `apps/worker/.dev.vars.example` and `apps/w
 
 Local files (you create them; never commit):
 - `apps/worker/.dev.vars`: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `GITHUB_DISPATCH_TOKEN` (optional locally), plus non-secret settings like `ADMIN_DEV_BYPASS=true`. Exact names follow the example file.
-- `apps/web/.env.local`: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_MEDIA_BASE_URL`, Turnstile **site** key only.
+- `apps/web/.env.local`: `NEXT_PUBLIC_SITE_URL`, the Turnstile **site** key and `BUILD_API_BASE_URL`. Public or build-time values only, never a secret.
 
 # STEP 8 — Migrations and admin access
 ```powershell
