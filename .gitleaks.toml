@@ -1,0 +1,14 @@
+# Default gitleaks rules plus one narrow exception.
+# The Worker tests use obviously fake keys (for example sk_test_realvalue1234567890) so the code that
+# recognises "a real-looking key" can be tested. They are not secrets. Everything else is still scanned.
+title = "flowart"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "fake keys used as fixtures in the Worker tests"
+paths = [
+  '''apps/worker/test/.*''',
+  '''apps/worker/vitest\.config\.ts''',
+]
