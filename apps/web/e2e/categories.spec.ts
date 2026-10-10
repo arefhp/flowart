@@ -109,7 +109,7 @@ test('categories can be reordered and the public filter follows the order', asyn
   await page.goto('/artworks');
   const labels = await page
     .getByRole('group', { name: 'Category' })
-    .getByRole('button')
+    .locator('button[aria-pressed]')
     .evaluateAll((els) => els.map((e) => e.querySelector('span')?.textContent?.trim()));
   expect(labels).toEqual(['All', 'Resin', 'Fine Art']);
 

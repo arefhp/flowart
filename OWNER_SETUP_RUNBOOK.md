@@ -271,21 +271,64 @@ npm run seed                  # sample data for local testing
 There is **no admin password** to create. Locally the app uses a development bypass. In production you sign in through Cloudflare Access with your email (Step 10). If the schema must change later: ask Claude for a new migration. Never edit production tables by hand.
 
 # STEP 9 — Run locally and acceptance-test
-Start the Worker (`wrangler dev`, port 8787) and web (`:3000`) per the README. Test:
-- Admin: create artwork **with** price, upload several images (the browser makes the three sizes), choose the **cover** image, view the public page.
-- Gallery: `/artworks` shows **one cover image per artwork**. Click one: the artwork page shows all its images (thumbnails, click to enlarge, arrow keys to move, Esc to close) and the full description. Try the **Ask about this work** button (it opens the contact form with the artwork's name filled in).
-- Categories and filters: in `Admin -> Categories` add a category, then give an artwork that category and a size. On `/artworks` try the filter sidebar (Category, Size, Available only) and "Clear filters"; on a phone it opens from a "Filters" button. Try deleting a category that still has an artwork: you must get an error naming the artwork.
-- Languages: fill in some Danish text in the admin, then use the EN | DA switch. Fields left empty in Danish show the English text. Check `/da/artworks` and `/da/about`.
-- Create artwork **without** price -> public page must show no price label, no "-", "N/A", "Free", or empty box. (Mandatory.)
-- Open `/admin/about`: check the artist statement is there, upload your portrait (JPEG/PNG/WebP, ideally portrait orientation, at least 1200 px tall), write the alt text, save, and view `/about` on desktop and phone. Remove the portrait and confirm the page still looks clean with text only.
-- Create an event in `Admin -> Events` (it starts as a draft), set date/time/places/price, press **Publish**, see it on `/workshops` and `/calendar`. Check the times are correct for Copenhagen, try **Add to calendar**, then **Back to draft** and **Cancel event**. Try a time that does not exist (02:30 on the last Sunday of March): you must get a clear message.
-- Book with Stripe test card `4242 4242 4242 4242`. Forward webhooks:
-  ```powershell
-  stripe login
-  stripe listen --forward-to localhost:8787/api/stripe/webhook
-  ```
-- Confirm: success page says "confirming", booking becomes Confirmed only after the webhook; a duplicate webhook is harmless; abandoned checkout releases capacity; overbooking is impossible.
-- Cancel a paid test event -> refund + email happen.
+Use this step to click through the real local site as an owner. It uses a local database and local image storage; it does not publish anything to the live site. Keep all Stripe activity in **Test mode**.
+
+### Start the local site
+
+Run these commands from the repository root in PowerShell. Do this once after a fresh clone; `npm run setup` does not overwrite existing local environment files:
+
+```powershell
+npm install
+npm run setup
+npm run migrate:local
+npm run seed
+```
+
+If you have already set up the project and only need to restart it, skip those commands and start the servers:
+
+```powershell
+npm run dev
+```
+
+This starts both services: the Worker API at `http://localhost:8787` and the website at `http://localhost:3000`. Leave this terminal open. If you prefer separate terminals, run `npm run dev:worker` in one and `npm run dev:web` in the other. Check that the Worker is responding by opening `http://localhost:8787/api/health`, then open `http://localhost:3000`.
+
+The local admin has no login. The sample data is useful for browsing, but create a fresh artwork and event for the checks below so you can safely edit or cancel them. Emails use the local console driver by default: check the Worker terminal for email output. If PowerShell blocks `npm`, use `npm.cmd` in place of `npm`.
+
+### Artwork, gallery, categories, languages and About
+
+1. Open `http://localhost:3000/admin` and create an artwork **with** a price. Upload several images; the browser creates three image sizes for each upload. Choose one as the **cover**, save, and open the artwork's public page.
+2. Open `http://localhost:3000/artworks`. Each artwork should appear once, using its cover image. Open your artwork: confirm all its images appear as thumbnails, select a thumbnail, click the large image to open the viewer, use the left/right arrow keys to move, and press `Esc` to close. Confirm the full description is shown. Click **Ask about this work**; the contact form should open with the artwork name filled in.
+3. In `Admin -> Categories`, add a category. Edit an artwork and assign it that category and a size. On `/artworks`, try Category, Size and Available only in the filter sidebar, then click **Clear filters**. On a phone-sized screen, confirm the filters open from the **Filters** button. Try deleting the category while an artwork still uses it; deletion must be blocked with an error naming that artwork.
+4. In the admin, add some Danish text to an artwork. Use the **EN | DA** switch. Fields with no Danish translation should show their English text. Check `http://localhost:3000/da/artworks` and `http://localhost:3000/da/about`.
+5. Create a second artwork **without** a price. Its public page must show no price label, dash, `N/A`, `Free`, or empty price box. **This check is mandatory.**
+6. Open `http://localhost:3000/admin/about`. Confirm the artist statement is present. Upload the portrait (JPEG, PNG or WebP; portrait orientation and at least 1200 px tall are ideal), enter alt text and save. View `http://localhost:3000/about` on desktop and phone. Remove the portrait and save; the text-only page should still look clean.
+
+### Events and Copenhagen time
+
+1. In `Admin -> Events`, create an event. It should start as a draft. Set its date, Copenhagen start time, places and a price, then press **Publish**.
+2. Open `http://localhost:3000/workshops` and `http://localhost:3000/calendar`. Confirm the event appears and its time is correct for Copenhagen. Try **Add to calendar** and confirm a calendar file downloads with the correct event time.
+3. Return to the admin and use **Back to draft**, then **Cancel event**, confirming the event is no longer offered for booking.
+4. Try to create an event at `02:30` on the last Sunday in March, when Copenhagen clocks jump forward. For example, use `2027-03-28` if that date is still in the future when you run this test. The nonexistent local time must be rejected with a clear message, not silently shifted to another time.
+
+### Stripe sandbox booking, webhook and refund
+
+The pretend-payment default is useful for ordinary development, but it does **not** test a real Stripe card, webhook delivery or Stripe refund. To perform the checks below, use a Stripe **test-mode** secret key only; never use a live key.
+
+1. In `apps/worker/.dev.vars`, set `STRIPE_SECRET_KEY` to your Stripe test-mode secret key (`sk_test_...`). Do not paste it into chat or commit the file. Keep `EMAIL_DRIVER=console` if you want to inspect email contents in the Worker terminal.
+2. Start the local site with `npm run dev` and leave it running. In a **second PowerShell terminal**, from the repository root, sign in to the Stripe CLI and start forwarding the webhook events the app handles:
+
+   ```powershell
+   stripe login
+   stripe listen --forward-to localhost:8787/api/stripe/webhook --events checkout.session.completed,checkout.session.expired,charge.refunded
+   ```
+
+   The listener prints a webhook signing secret beginning with `whsec_`. Copy it into `STRIPE_WEBHOOK_SECRET` in `apps/worker/.dev.vars` (do not share it), stop and restart `npm run dev` so the Worker loads it, and leave `stripe listen` running. If you restart the listener and it prints a different signing secret, update `.dev.vars` and restart the Worker again.
+3. Create and publish a paid test event, then book it at `http://localhost:3000/workshops`. On Stripe Checkout use test card `4242 4242 4242 4242`, any future expiry date, any three-digit CVC and any postal code. Complete payment.
+4. The success page should initially say it is **confirming** the payment. In `Admin -> Bookings`, the booking must become **Confirmed** only after the webhook arrives. The Stripe CLI terminal should show the event being forwarded. Delivering the same webhook twice must not create a duplicate confirmation, charge or email; the automated idempotency regression tests can also be run with `npm run test -w apps/worker`.
+5. Start another checkout and abandon it instead of paying. After the hold expires (30 minutes), the places should become available again. To check capacity safely, make two bookings close together for the last available place; no more places may be confirmed than the event's capacity.
+6. Cancel the paid test event from `Admin -> Events`. Confirm the sandbox payment is refunded and the refund/owner notification emails are printed in the Worker terminal. A local console email is output for inspection, not delivered to a real inbox.
+
+For more Stripe setup detail and troubleshooting, see [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md), section 7. Do not run these payment checks with live Stripe credentials.
 
 # STEP 10 — Deploy to Cloudflare
 1. **Apply migrations to production** (explicit step, run by you or the manual `migrate` workflow after approval): `npm run migrate:prod`.

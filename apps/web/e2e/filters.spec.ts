@@ -12,7 +12,7 @@ const cards = (page: Page) => page.locator('main ul > li');
 const titles = async (page: Page) => (await cards(page).locator('.title').allInnerTexts()).sort();
 const group = (page: Page, name: string) => page.getByRole('group', { name });
 /** The visible labels of a group's options (the small count beside each is not part of the label). */
-const optionNames = (g: Locator) => g.getByRole('button').evaluateAll((els) => els.map((e) => e.querySelector('span')?.textContent?.trim()));
+const optionNames = (g: Locator) => g.locator('button[aria-pressed]').evaluateAll((els) => els.map((e) => e.querySelector('span')?.textContent?.trim()));
 const priceFilterTest = SHOW_PRICE_FILTER ? test : test.skip;
 
 test.describe('artwork filters (sidebar)', () => {
@@ -91,7 +91,7 @@ test.describe('artwork filters (sidebar)', () => {
   test('each option shows how many artworks it has', async ({ page }) => {
     await page.goto('/artworks');
     const counts = async (name: string) =>
-      group(page, name).getByRole('button').evaluateAll((els) => els.map((e) => e.querySelectorAll('span')[1]?.textContent?.trim()));
+      group(page, name).locator('button[aria-pressed]').evaluateAll((els) => els.map((e) => e.querySelectorAll('span')[1]?.textContent?.trim()));
     expect(await counts('Category')).toEqual(['4', '3', '1']); // All, Fine Art, Resin
     expect(await counts('Size')).toEqual(['4', '2', '2', '0']); // All, Small, Medium, Large
   });
@@ -222,5 +222,30 @@ test.describe('wording and About', () => {
     await expect(page.getByText('persisk miniaturemaleri')).toBeVisible();
     await expect(page.getByText('Persian miniature painting')).toHaveCount(0);
     expect(await page.locator('main .prose-artist p').count()).toBe(4);
+  });
+});
+
+test.describe('filter groups fold open and closed', () => {
+  test('each group header is a button that hides and shows its options', async ({ page }) => {
+    await page.goto('/artworks');
+    for (const name of ['Category', 'Size', 'Availability']) {
+      const header = page.getByRole('button', { name, exact: true });
+      await expect(header).toHaveAttribute('aria-expanded', 'true');
+      await expect(header).toHaveCSS('cursor', 'pointer');
+      const options = group(page, name).locator('button[aria-pressed]');
+      await expect(options.first()).toBeVisible();
+      await header.click();
+      await expect(header).toHaveAttribute('aria-expanded', 'false');
+      await expect(options.first()).toBeHidden();
+      await header.click();
+      await expect(options.first()).toBeVisible();
+    }
+  });
+
+  test('a choice that is already made stays applied while its group is folded', async ({ page }) => {
+    await page.goto('/artworks?size=small');
+    await expect(page.getByText('Showing 2 of 4')).toBeVisible();
+    await page.getByRole('button', { name: 'Size', exact: true }).click();
+    await expect(page.getByText('Showing 2 of 4')).toBeVisible();
   });
 });

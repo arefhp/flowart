@@ -62,13 +62,40 @@ function Option({
   );
 }
 
+/**
+ * A filter group that folds open and closed. The whole header is the button, with a chevron and a
+ * hover tint so it is clear that it can be clicked. Groups start open.
+ */
 function Group({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(true);
   return (
-    <div role="group" aria-labelledby={id} className="border-t border-hairline pt-4">
-      <h3 id={id} className="mb-1 font-sans text-[0.8rem] font-medium tracking-wide text-ink">
-        {label}
+    <div role="group" aria-labelledby={id} className="border-t border-hairline pt-1">
+      <h3 id={id} className="font-sans text-[0.8rem] font-medium tracking-wide text-ink">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={`${id}-options`}
+          onClick={() => setOpen((o) => !o)}
+          className="-mx-2 flex min-h-[44px] w-[calc(100%+1rem)] cursor-pointer items-center justify-between rounded-sm px-2 text-left transition-colors hover:bg-hairline/50 focus-visible:bg-hairline/50"
+        >
+          <span>{label}</span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 12 12"
+            className={`h-3 w-3 shrink-0 text-stone transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M2 4.5 6 8.5 10 4.5" />
+          </svg>
+        </button>
       </h3>
-      <div>{children}</div>
+      <div id={`${id}-options`} hidden={!open} className="pb-3">
+        {children}
+      </div>
     </div>
   );
 }
@@ -231,7 +258,7 @@ export function ArtworksBrowser({
 
       <div>
         {shown.length > 0 ? (
-          <ArtworkGrid artworks={shown} locale={locale} t={t.label} className="columns-1 gap-x-10 sm:columns-2 2xl:columns-3" />
+          <ArtworkGrid artworks={shown} locale={locale} t={t.label} className="grid grid-cols-1 gap-x-10 gap-y-16 sm:grid-cols-2 2xl:grid-cols-3" />
         ) : (
           <div className="py-4">
             <p className="text-stone">{f.none}</p>

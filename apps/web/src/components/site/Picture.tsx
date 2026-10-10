@@ -19,9 +19,10 @@ export function Picture({
   /**
    * natural: full width, the image's own proportions (gallery).
    * cover: fills a fixed box (the About portrait).
+   * contain: shown whole inside a box the parent sizes (the gallery tiles), never cropped.
    * height: sized by a maximum height and shrinks to its own width (the home hero), so no grey side bars.
    */
-  fit?: 'natural' | 'cover' | 'height';
+  fit?: 'natural' | 'cover' | 'height' | 'contain';
 }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -35,8 +36,14 @@ export function Picture({
       loading={priority ? 'eager' : 'lazy'}
       fetchPriority={priority ? 'high' : 'auto'}
       decoding="async"
-      className={`block bg-hairline ${
-        fit === 'cover' ? 'h-full w-full object-cover' : fit === 'height' ? 'h-auto max-w-full' : 'h-auto w-full'
+      className={`block ${fit === 'contain' ? '' : 'bg-hairline'} ${
+        fit === 'cover'
+          ? 'h-full w-full object-cover'
+          : fit === 'contain'
+            ? 'h-full w-full object-contain'
+            : fit === 'height'
+              ? 'h-auto max-w-full'
+              : 'h-auto w-full'
       } ${className}`}
     />
   );
