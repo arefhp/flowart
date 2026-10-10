@@ -17,7 +17,8 @@ import type { Env } from '../src/env';
 import { setState } from '../src/lib/site-state';
 import { setPortrait } from '../src/services/about';
 import { addImage, createArtwork, setCover, type ArtworkRow } from '../src/services/artworks';
-import { cancelEvent, createEvent, publishEvent } from '../src/services/events';
+import { createEvent, publishEvent } from '../src/services/events';
+import { cancelEvent } from '../src/services/bookings-admin';
 import type { ValidatedUpload } from '../src/services/images';
 
 if (process.argv.includes('--remote') || process.env.APP_ENV === 'production') {
@@ -346,7 +347,7 @@ async function seedEvents(env: Env): Promise<number> {
       ends_at: end.utc,
     });
     if (e.outcome === 'published') await publishEvent(env, created.id);
-    if (e.outcome === 'cancelled') await cancelEvent(env, created.id);
+    if (e.outcome === 'cancelled') await cancelEvent(env, created.id, true);
     if (e.outcome === 'completed') await env.DB.prepare(`UPDATE events SET status = 'completed' WHERE id = ?1`).bind(created.id).run();
     console.log(`  + event "${e.title}" (${e.outcome}, ${e.day} ${e.from})`);
     added++;

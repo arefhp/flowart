@@ -19,7 +19,8 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: 'npm run dev:worker',
+      // forces the pretend payment page, even when a real Stripe test key sits in .dev.vars
+      command: 'npm run dev:e2e -w apps/worker',
       cwd: '../..',
       url: 'http://localhost:8787/api/health',
       reuseExistingServer: true,
@@ -28,6 +29,8 @@ export default defineConfig({
     {
       command: 'npm run dev:web',
       cwd: '../..',
+      // the always-pass spam-check key, even when a real one is set in .env.local
+      env: { NEXT_PUBLIC_TURNSTILE_SITE_KEY: '1x00000000000000000000AA' },
       url: 'http://localhost:3000',
       reuseExistingServer: true,
       timeout: 120_000,

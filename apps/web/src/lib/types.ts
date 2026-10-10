@@ -74,6 +74,9 @@ export interface EventAvailability {
   remaining: number;
   soldOut: boolean;
   bookable: boolean;
+  /** only on a single workshop's availability */
+  maxPerBooking?: number;
+  holdMinutes?: number;
 }
 
 export interface AboutContent {

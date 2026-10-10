@@ -71,14 +71,19 @@ GITHUB_REPO=arefhp/flowart
 GITHUB_DISPATCH_TOKEN=
 
 # ---------------------------------------------------------------------------
-# Booking and Stripe (used from Milestone 3; listed here so the file is complete)
+# Booking and Stripe
 # ---------------------------------------------------------------------------
-# OPTIONAL. Maximum places in one booking, and how long unpaid places are held (minutes).
+# OPTIONAL. Maximum places in one booking, and how long unpaid places are held (minutes, at least 30
+# because Stripe keeps a payment page open for at least 30 minutes).
 BOOKING_MAX_PARTICIPANTS=10
 BOOKING_HOLD_MINUTES=30
-# SECRET. OPTIONAL until Milestone 3. Stripe sandbox/test key: https://dashboard.stripe.com/test/apikeys
-# Example format: sk_test_xxx
+# SECRET. OPTIONAL locally, REQUIRED in production. Stripe sandbox/test key:
+# https://dashboard.stripe.com/test/apikeys   Example format: sk_test_xxx
 STRIPE_SECRET_KEY=sk_test_xxx
-# SECRET. OPTIONAL until Milestone 3. Printed by `stripe listen` (local) or created in the Stripe
-# dashboard (production). Example format: whsec_xxx
+# SECRET. OPTIONAL locally, REQUIRED in production. Printed by `stripe listen` (local) or created in the
+# Stripe dashboard (production). Example format: whsec_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
+# OPTIONAL, LOCAL ONLY. 'true' lets you try the whole booking flow with a built-in pretend payment page
+# (no Stripe account, no internet). It is used only while STRIPE_SECRET_KEY is empty or an example
+# value, and the Worker refuses to start in production if it is set.
+STRIPE_FAKE=true

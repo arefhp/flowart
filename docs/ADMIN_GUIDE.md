@@ -2,7 +2,7 @@
 
 For the owner. No coding needed. Everything below is done at **https://zfadavi.com/admin** (locally: http://localhost:3000/admin).
 
-> **What exists today (Milestones 1 and 2):** Overview, Artworks, Categories, Events, Calendar, About, Social links, Messages, Help, and the **Rebuild site** button. Section 5 (Bookings) and refunding describe what arrives in Milestone 3; they are not in the admin yet. If a screen is named differently in the finished app, tell Claude and update this guide.
+> **What exists today (Milestones 1 to 3):** Overview, Artworks, Categories, Events, **Bookings**, Calendar, About, Social links, Messages, Help, and the **Rebuild site** button. If a screen is named differently in the finished app, tell Claude and update this guide.
 
 ---
 
@@ -84,30 +84,39 @@ Your Instagram, Facebook and TikTok links are set here and appear in the footer 
 | Button | What it does |
 |---|---|
 | **Publish** | puts a draft on the public site (the start must be in the future) |
-| **Back to draft** | takes it off the public site again (only possible while nobody has booked) |
-| **Cancel event** | visitors see it as **cancelled**, struck through, with no way to book. (Cancelling an event that already has bookings, and refunding them, arrives with online booking in Milestone 3.) |
+| **Back to draft** | takes it off the public site again (only possible while nobody has booked; otherwise cancel it) |
+| **Cancel event** | visitors see it as **cancelled**, struck through, with no way to book. If people have already booked, you are first told how many people and how much money, and asked to confirm; then every paid booking is **refunded in full** and every customer gets an email (section 5) |
 | **Delete event** | removes it for good. Only possible when nobody has ever booked; otherwise cancel it |
 
 A **cancelled** or **completed** event can no longer be edited. After a workshop has ended, the site moves it to the past list by itself, and it is marked **Completed** within about 15 minutes. You cannot make the number of places lower than the places already booked, and a price change only applies to new bookings.
 
-**What visitors see:** the **Workshops** page (upcoming first, past ones below), each workshop's own page with the date, time (marked Copenhagen time), place, price per person, **places left (live)** and an **Add to calendar** button that downloads a standard calendar file, and a **Calendar** page with a month view. The home page shows the next three upcoming workshops. Full, cancelled and past workshops show the right message. Until online booking arrives (Milestone 3), the button is **Ask about a place**: it opens the contact form with the workshop's name and date filled in, and the message arrives in **Messages**.
+**What visitors see:** the **Workshops** page (upcoming first, past ones below), each workshop's own page with the date, time (marked Copenhagen time), place, price per person, **places left (live)** and an **Add to calendar** button that downloads a standard calendar file, and a **Calendar** page with a month view. The home page shows the next three upcoming workshops. Full, cancelled and past workshops show the right message. While places are left, the workshop page has the **booking form** (section 5); under it a link, **Have a question first? Write to me**, opens the contact form with the workshop's name and date filled in, and the message arrives in **Messages**. A workshop with the price **0** is **free**: people book without paying.
 
 **The admin Calendar** shows every workshop by date (drafts dashed, published with a blue edge, cancelled struck through) with the places booked out of the total. Click one to edit it. **Events** lists them as Upcoming and Past and cancelled.
 
 ## 5. Bookings (`Admin -> Bookings`)
-Lists everyone who booked, with event, number of people, amount and status.
+
+**How a customer books.** On a workshop page with places left, the customer fills in name and email (phone is optional), chooses how many places (up to 10), ticks the box saying they have read the Terms and the Privacy policy, and presses **Pay**. Above the Pay button they can see the **total price**, that their places are **held for 30 minutes** while they pay, and the **free-cancellation rule** (see below). They then pay on Stripe's secure page (cards and wallets such as Apple Pay and Google Pay). When Stripe confirms the payment, the booking becomes **Confirmed** and they receive an email in their language with the details and a calendar file; you receive a notification email at `info@zfadavi.com` (Reply goes to the customer). For a **free** workshop the booking is confirmed at once, with the same emails and no payment.
+
+Nothing is ever confirmed because a customer came back to the site: only Stripe telling the server that the payment worked confirms it. The "thank you" page says *We're confirming your payment...* until then.
+
+**The list.** `Admin -> Bookings` shows everyone who booked: when, workshop, name and email, places, amount and status. Filter by **workshop**, by **status**, or **Needs attention only**. **Download as spreadsheet (CSV)** gives the same list (with the same filters) for your own records or your accountant.
 
 | Status | Meaning |
 |---|---|
-| Pending | the customer is still paying; the places are held for 30 minutes, then released |
-| Confirmed | paid and confirmed (only after Stripe confirms the payment) |
-| Cancelled | cancelled or refunded |
-| Expired | payment was not completed in time |
-| **Needs attention** | something unusual (for example someone paid after their hold expired and the event filled up). Open it and refund or resolve it |
+| Waiting for payment | the customer is still paying; the places are held for 30 minutes, then released automatically |
+| Confirmed | paid (or free) and confirmed |
+| Cancelled | cancelled by you or because the workshop was cancelled; paid ones are refunded |
+| Expired (not paid) | the payment was not completed in time; the places went back on sale |
+| **Needs attention** (red note) | something unusual that needs a human: a refund that did not go through, or an amount that does not match. The note says what. Fix it (for example refund it in the Stripe dashboard), then press **Mark as handled**. You also get an email, and the Overview lists these |
 
-Actions: **filter** by event/status, **export CSV** (for your own records or accountant), **refund** one booking. Refunds go back to the customer's card by Stripe.
+**Cancellation policy.** Customers have no accounts, so they cancel by emailing `info@zfadavi.com`. If they write **at least 24 hours before the workshop starts**, they get a **full refund**: find their booking and press **Cancel and refund**. The dialog tells you the amount and how long is left before the start, so you can see whether the 24-hour rule applies; the app does not stop you from refunding a later request, that is your decision. The customer is emailed in their language and the places become free again. If **you** cancel a workshop, everyone is refunded automatically (section 4). If someone pays *after* their 30 minutes ran out and the places are gone, they are refunded automatically and told so.
 
-**Cancellation policy (your decision):** customers have no accounts, so they cancel by emailing `info@zfadavi.com`. If they write **at least 24 hours before the workshop starts**, they get a **full refund**: open their booking and press **Refund**; the places are released and they get an email in their language. The refund dialog shows how many hours remain before the start. Later requests are not covered by the policy (your discretion; the app does not stop you from refunding). If **you** cancel an event, everyone who paid is refunded automatically (section 4). A booking can be made for at most 10 places at once, and unpaid places are held for 30 minutes.
+**Refunds go back to the original card**, through Stripe. Depending on the bank it can take a few days to show on the customer's statement.
+
+**If a workshop has many bookings**, the refunds are sent a few at a time (10 per run); the rest follow automatically within a few minutes. The dialog says how many are still on their way.
+
+A booking can be for at most 10 places at once. Several people are not stopped from booking with the same email: each booking is separate.
 
 ## 6. Calendar and messages
 - **Calendar:** all events by date with the places booked out of the total (see section 4).
@@ -147,7 +156,7 @@ Live items such as remaining places and booking status are always fresh and do n
 | Can I hide the price on some artworks? | Yes: leave Price empty |
 | Can I take an artwork off the site without deleting it? | Yes: set status **Hidden** |
 | Why isn't my new artwork on the site yet? | the rebuild takes a few minutes (section 7) |
-| Someone paid but isn't confirmed | wait a minute (confirmation comes from Stripe); then check the Bookings list for **Needs attention** |
+| Someone paid but isn't confirmed | wait a minute (confirmation comes from Stripe); then check the Bookings list for **Needs attention**. If Stripe shows the payment but the site never confirmed it, check **Developers -> Webhooks** in the Stripe dashboard for failed deliveries (runbook Step 8) |
 | I need to change a price on an event with bookings | already-paid bookings keep the price they paid; the new price applies to new bookings |
 | How do I change the contact email shown on the site? | ask Claude (it is a setting, not a page edit) |
 | How do I change a page like Privacy or Terms? | ask Claude to edit it (these pages are part of the code, not the admin). They exist in English and Danish; the wording is in `docs/LANGUAGE_REVIEW.md` |

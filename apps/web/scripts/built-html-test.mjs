@@ -252,6 +252,11 @@ try {
   check('robots.txt disallows the admin and points at the sitemap', /Disallow: \/admin/.test(read('robots.txt')) && /Sitemap: https:\/\/zfadavi\.com\/sitemap\.xml/.test(read('robots.txt')));
   const sitemap = read('sitemap.xml');
   check('sitemap lists both languages for artworks and pages', ['/artworks/second-piece', '/da/artworks/second-piece', '/da/about', '/contact'].every((p) => sitemap.includes(`https://zfadavi.com${p}`)));
+  for (const file of ['booking/success.html', 'booking/cancelled.html', 'da/booking/success.html', 'da/booking/cancelled.html']) {
+    check(`${file} is built and not indexed (it belongs to one person's booking)`, /name="robots" content="noindex/.test(read(file)));
+  }
+  check('booking pages are not in the sitemap', !sitemap.includes('/booking/'));
+  check('the workshop page carries NO booking form in its static HTML (the form is live-only)', !/id="booking-name"|booking-total/.test(read('workshops/summer-workshop.html')));
   check('a 404 page is generated', existsSync(join(outDir, '404.html')));
   check('static export has no server-only output (no app server folder)', !existsSync(join(outDir, 'server')));
 

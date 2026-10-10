@@ -92,7 +92,7 @@ Files to give Claude: put them in the repo's `input/` folder (do not paste them 
 | Artwork enquiries | "Ask about this work" button opens the contact form pre-filled (not shown for sold works) | decided |
 | Gallery | The grid shows one cover image per artwork; clicking opens the artwork page with all its images and the full description | decided |
 | Workshop times | Always Copenhagen time; a new event is saved as a draft until you press Publish | decided |
-| Booking before Milestone 3 | Visitors press "Ask about a place" (opens the contact form with the workshop filled in); online booking and payment arrive in Milestone 3 | decided |
+| Booking | Online from Milestone 3: places are held 30 minutes while paying, then released. Free workshops (price 0) are confirmed without payment. "Have a question first? Write to me" opens the contact form with the workshop filled in | decided |
 | Categories | Defined by you in the admin (start: Fine Art, Resin). One category per artwork; a category with artworks cannot be deleted | decided |
 | Size | Small / Medium / Large, chosen by you for every artwork | decided |
 | Gallery filters | A sidebar with Category, Size (always Small, Medium, Large) and Available only. The **price filter is built but switched off for now**; it can be turned on later (`docs/MAINTENANCE.md`) | decided |

@@ -1,31 +1,9 @@
-import { dayInZone, type Locale } from '@flowart/shared';
+import { formatEventDate, formatEventTimes, type Locale } from '@flowart/shared';
 import { fmt, formatPrice, intlLocale, type Dict } from '@/i18n/dictionary';
 import type { EventAvailability, PublicEvent } from './types';
 
-/**
- * Dates and times of a workshop are always shown in the EVENT's own time zone (Copenhagen), no
- * matter where the visitor is or when the page was built (spec section 5).
- */
-const longDate = (loc: string, tz: string) =>
-  new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-const time = (loc: string, tz: string) =>
-  new Intl.DateTimeFormat(loc, { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-
-/** "Saturday 14 November 2026" / "lørdag den 14. november 2026" */
-export function formatEventDate(startIso: string, tz: string, locale: Locale): string {
-  return longDate(intlLocale[locale], tz).format(new Date(startIso));
-}
-
-/** "10:00 to 13:00" (the same day) or "14 Nov 10:00 to 15 Nov 13:00" (it spans days). */
-export function formatEventTimes(startIso: string, endIso: string, tz: string, locale: Locale): string {
-  const loc = intlLocale[locale];
-  const t = time(loc, tz);
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  if (dayInZone(startIso, tz) === dayInZone(endIso, tz)) return `${t.format(start)}–${t.format(end)}`;
-  const d = new Intl.DateTimeFormat(loc, { timeZone: tz, day: 'numeric', month: 'short' });
-  return `${d.format(start)} ${t.format(start)} – ${d.format(end)} ${t.format(end)}`;
-}
+// formatEventDate and formatEventTimes live in @flowart/shared so the emails use the same code.
+export { formatEventDate, formatEventTimes };
 
 /** The three little parts of a date badge: weekday, day number, month. */
 export function dayBadge(startIso: string, tz: string, locale: Locale): { weekday: string; day: string; month: string } {

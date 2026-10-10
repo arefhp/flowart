@@ -5,7 +5,7 @@ Art portfolio + workshop booking site for a Copenhagen-based artist.
 - **Gallery:** the grid shows one cover image per artwork; clicking it opens the artwork page with all its images, the full description, and an "Ask about this work" button. Price is optional — if the admin leaves it empty, no price is shown anywhere on the public site.
 - **Categories and filters:** the owner defines categories (starting with Fine Art and Resin) and picks a category and a size (Small, Medium, Large) for each artwork. Visitors filter the gallery from a sidebar by category, size (Small, Medium, Large) and availability. A price-range filter is built but switched off for now.
 - **Languages:** English (root) and Danish (`/da/`) from day one; Danish text is optional per field and falls back to English. The About statement has a Danish version from the start.
-- **Workshops/events:** date and time (always Copenhagen time, summer and winter handled), capacity with live places left, calendar view and `.ics` download; Stripe Checkout payment and confirmation arrive in Milestone 3.
+- **Workshops/events:** date and time (always Copenhagen time, summer and winter handled), capacity with live places left, calendar view and `.ics` download; **online booking**: a customer books places (paid through Stripe Checkout, or free), places are held for 30 minutes, confirmation and calendar file are emailed in the customer's language, and the owner can refund from the admin.
 - **Contact:** contact form with spam protection.
 - **Admin:** private `/admin` area (protected by Cloudflare Access) to manage everything without touching code.
 
@@ -47,7 +47,7 @@ npm run dev            # site on http://localhost:3000, API on :8787, admin at /
 Add a Stripe **test** key / Resend key only for the features that need them. Full details: [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md). Managing the site: [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md).
 
 ## Status
-**Milestones 1 and 2 are built:** the bilingual gallery (cover images, artwork pages with a viewer, filters, "Ask about this work"), the About page, social links, the contact form, **workshops** (list, pages with live places, "Add to calendar" files, a month calendar) and the admin for all of it, with tests. Next: Milestone 3 (online booking and payments), Milestone 4 (production hardening and launch). Until Milestone 3, visitors ask for a place by message. The quick start above works as written.
+**Milestones 1, 2 and 3 are built:** the bilingual gallery (cover images, artwork pages with a viewer, filters, "Ask about this work"), the About page, social links, the contact form, **workshops** (list, pages with live places, "Add to calendar" files, a month calendar) **online booking and payments** (Stripe Checkout in the sandbox, free workshops, holds, webhooks, emails with calendar files, refunds, Bookings admin with CSV) and the admin for all of it, with tests. Next: Milestone 4 (production hardening and launch). The quick start above works as written, with no Stripe account needed (a built-in pretend payment page is used locally).
 
 Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:built-html`, `npm run test:e2e` (see [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md), section 12).
 

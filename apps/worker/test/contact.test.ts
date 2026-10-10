@@ -126,6 +126,9 @@ describe('contact form', () => {
       ACCESS_AUD: 'aud',
       ADMIN_EMAILS: 'owner@example.com',
       TURNSTILE_SECRET_KEY: '0x4AAAAAAAreal-secret-value',
+      STRIPE_SECRET_KEY: 'sk_test_realvalue1234567890',
+      STRIPE_WEBHOOK_SECRET: 'whsec_realvalue1234567890',
+      STRIPE_FAKE: undefined,
       ...live,
     };
     const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {

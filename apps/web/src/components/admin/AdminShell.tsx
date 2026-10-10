@@ -10,6 +10,7 @@ const NAV = [
   { href: '/admin/artworks', label: 'Artworks' },
   { href: '/admin/categories', label: 'Categories' },
   { href: '/admin/events', label: 'Events' },
+  { href: '/admin/bookings', label: 'Bookings' },
   { href: '/admin/calendar', label: 'Calendar' },
   { href: '/admin/about', label: 'About' },
   { href: '/admin/social', label: 'Social links' },

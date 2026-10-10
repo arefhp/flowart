@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/ensure-assets-dir.mjs && wrangler dev --port 8787 --assets .local-assets",
+    "dev:e2e": "node scripts/ensure-assets-dir.mjs && wrangler dev --port 8787 --assets .local-assets --var STRIPE_SECRET_KEY: --var STRIPE_FAKE:true --var TURNSTILE_SECRET_KEY:1x0000000000000000000000000000000AA --var EMAIL_DRIVER:console --var GITHUB_DISPATCH_TOKEN:",
     "preview": "node scripts/ensure-assets-dir.mjs && wrangler dev --port 8788",
     "migrate:local": "wrangler d1 migrations apply DB --local",
     "migrate:prod": "wrangler d1 migrations apply DB --remote",

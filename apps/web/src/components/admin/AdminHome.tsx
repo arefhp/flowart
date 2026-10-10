@@ -2,17 +2,19 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { adminApi, type AdminArtworkRow, type RebuildStatus } from '@/lib/admin-api';
+import { adminApi, type AdminArtworkRow, type AdminBooking, type RebuildStatus } from '@/lib/admin-api';
 import { PageTitle } from './ui';
 
 /** Landing page: what needs attention and where to go next. */
 export function AdminHome() {
   const [artworks, setArtworks] = useState<AdminArtworkRow[] | null>(null);
   const [status, setStatus] = useState<RebuildStatus | null>(null);
+  const [flagged, setFlagged] = useState<AdminBooking[]>([]);
 
   useEffect(() => {
     adminApi.get<{ artworks: AdminArtworkRow[] }>('/artworks').then((r) => setArtworks(r.artworks)).catch(() => undefined);
     adminApi.get<RebuildStatus>('/site/status').then(setStatus).catch(() => undefined);
+    adminApi.get<{ bookings: AdminBooking[] }>('/bookings?attention=1').then((r) => setFlagged(r.bookings)).catch(() => undefined);
   }, []);
 
   const noImage = artworks?.filter((a) => a.image_count === 0) ?? [];
@@ -35,7 +37,15 @@ export function AdminHome() {
           <h2 id="todo-heading" className="text-xl">
             Needs attention
           </h2>
-          {noImage.length === 0 ? (
+          {flagged.length > 0 ? (
+            <p>
+              <Link className="link text-alert" href="/admin/bookings?attention=1">
+                {flagged.length} booking{flagged.length === 1 ? ' needs' : 's need'} your attention
+              </Link>{' '}
+              (for example a refund that did not go through).
+            </p>
+          ) : null}
+          {noImage.length === 0 && flagged.length === 0 ? (
             <p className="text-stone">Nothing right now.</p>
           ) : (
             <ul className="list-disc pl-5">
@@ -60,6 +70,7 @@ export function AdminHome() {
             ['/admin/artworks', 'Artworks', 'Add, edit and organise the gallery.'],
             ['/admin/categories', 'Categories', 'Fine Art, Resin and any others you add.'],
             ['/admin/events', 'Events', 'Create, publish and cancel workshops.'],
+            ['/admin/bookings', 'Bookings', 'Who booked, payments and refunds.'],
             ['/admin/calendar', 'Calendar', 'All workshops by date, with places booked.'],
             ['/admin/about', 'About', 'Your statement and portrait, in English and Danish.'],
             ['/admin/social', 'Social links', 'Instagram, Facebook, TikTok and more.'],

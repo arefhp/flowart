@@ -84,8 +84,9 @@ You can browse the gallery, use the admin (create artworks, upload images, edit 
 | `BOOKING_HOLD_MINUTES` | no | yes | `30` (how long unpaid places are held) |
 | `RESEND_API_KEY` | **yes** | no | only for real email. https://resend.com/api-keys -> Create API Key -> **Sending access**, name `zakereh-art-local`. Starts with `re_`. Shown once |
 | `TURNSTILE_SECRET_KEY` | **yes** | yes | local test value `1x0000000000000000000000000000000AA` (always passes). Real key: Cloudflare -> Turnstile -> widget `zakereh-art-dev` |
-| `STRIPE_SECRET_KEY` | **yes** | only to test payments | https://dashboard.stripe.com/test/apikeys. Stay in **Test mode**. Starts with `sk_test_` |
-| `STRIPE_WEBHOOK_SECRET` | **yes** | only to test payments | printed by `stripe listen` (see section 7). Starts with `whsec_` |
+| `STRIPE_SECRET_KEY` | **yes** | only to test with the real Stripe sandbox | https://dashboard.stripe.com/test/apikeys. Stay in **Test mode**. Starts with `sk_test_`. Leave it as `sk_test_xxx` and the built-in pretend payment page is used instead (section 7) |
+| `STRIPE_WEBHOOK_SECRET` | **yes** | only to test with the real Stripe sandbox | printed by `stripe listen` (see section 7). Starts with `whsec_` |
+| `STRIPE_FAKE` | no | yes | `true` (local only): while `STRIPE_SECRET_KEY` is empty or an example value, bookings use the pretend payment page, no Stripe account needed. A real key always wins. The Worker refuses to start in production if this is set |
 | `GITHUB_DISPATCH_TOKEN`, `GITHUB_REPO` | token **yes** | no | production only. Without it, local "publish" works and the rebuild step is skipped with a notice |
 
 ### `apps/web/.env.local` (website, public values only)
@@ -107,14 +108,29 @@ A value still reading `CHANGE_ME` or a `*_xxx` example counts as missing.
 ## 6. The admin area locally
 Locally there is no sign-in: with `ADMIN_DEV_BYPASS=true` and `APP_ENV=local` the Worker treats you as the admin, and a banner in the admin says "Local development mode". In production the same pages sit behind Cloudflare Access (one-time code sent to your email). The admin guide is in [ADMIN_GUIDE.md](ADMIN_GUIDE.md).
 
-## 7. Test payments (Stripe test mode)
-1. Put your `sk_test_...` key in `.dev.vars` as `STRIPE_SECRET_KEY`.
+## 7. Test booking and payments
+There are two ways. Start with A; use B when you want to see the real Stripe test page.
+
+### A. Pretend payment page (no account, works offline)
+With `STRIPE_SECRET_KEY` left as `sk_test_xxx` (or empty) and `STRIPE_FAKE=true` (both are the defaults from `npm run setup`), booking a paid workshop sends you to a plain page that says **Local test only**, with three buttons:
+- **Pay (pretend)**: runs exactly the code a real Stripe confirmation runs (only the signature check is skipped), then returns to the "thank you" page. The confirmation emails are printed in the Worker terminal.
+- **Go back**: like pressing Back on Stripe's page: nothing is paid, the places stay held for a while.
+- **Let the payment page expire**: releases the places, like Stripe's page timing out.
+
+Everything else is real: the booking is saved in the local database, places are held, the admin shows it, you can refund it. Refunds are pretended too. This page does not exist in production: the Worker refuses to start there with `STRIPE_FAKE` set, and the page answers 404.
+
+If your `.dev.vars` already holds a real sandbox key (which always wins), start the site with **`npm run dev:pretend`** instead of `npm run dev`: it forces the pretend page, the always-pass spam check and console email, without touching your files.
+
+A free workshop (price 0) needs no payment at all and is confirmed immediately, in either mode.
+
+### B. The real Stripe sandbox
+1. Put your `sk_test_...` key in `.dev.vars` as `STRIPE_SECRET_KEY` (a real key always wins over the pretend page).
 2. In a **second terminal** run:
    ```powershell
    stripe login
-   stripe listen --forward-to localhost:8787/api/stripe/webhook
+   stripe listen --forward-to localhost:8787/api/stripe/webhook --events checkout.session.completed,checkout.session.expired,charge.refunded
    ```
-   It prints `Ready! Your webhook signing secret is whsec_...`. Put that value in `.dev.vars` as `STRIPE_WEBHOOK_SECRET` and restart the Worker (the secret changes if you run `stripe login` again).
+   It prints `Ready! Your webhook signing secret is whsec_...`. Put that value in `.dev.vars` as `STRIPE_WEBHOOK_SECRET` and restart the Worker (the secret changes if you run `stripe login` again). Keep this terminal open while testing.
 3. Book a workshop on http://localhost:3000/workshops and pay with:
    | Card | Result |
    |---|---|
@@ -122,9 +138,12 @@ Locally there is no sign-in: with `ADMIN_DEV_BYPASS=true` and `APP_ENV=local` th
    | `4000 0000 0000 9995` | declined (insufficient funds) |
    | `4000 0025 0000 3155` | requires 3-D Secure authentication |
    Any future expiry date, any 3-digit CVC, any postcode.
-4. The success page first says "We're confirming your payment"; the booking becomes **Confirmed** only when the webhook arrives. If it stays pending, `stripe listen` is not running or the webhook secret is wrong.
+4. The success page first says "We're confirming your payment"; the booking becomes **Confirmed** only when the webhook arrives. If it stays waiting, `stripe listen` is not running or the webhook secret is wrong.
+5. In the admin, **Bookings -> Cancel and refund** sends a real refund to the Stripe sandbox; check it under Stripe -> Payments.
 
 Check the current test cards at https://docs.stripe.com/testing.
+
+Tests never use your real key: the automated tests and `npm run test:e2e` run the Worker with the pretend page forced on (`npm run dev:e2e -w apps/worker`), with the always-pass spam check, console email and no GitHub rebuild trigger, whatever is in your `.dev.vars`.
 
 ## 8. Test email
 - Default (`EMAIL_DRIVER=console`): every email is printed in the Worker terminal, including the calendar attachment name. Use this for everyday work.
@@ -152,7 +171,8 @@ Check the current test cards at https://docs.stripe.com/testing.
 | `npm run build` says it cannot reach the API | start the Worker first (`npm run dev:worker`) so there is an API to build from |
 | `npm run build` fails with "resource busy or locked" on `out` | an old `wrangler dev` from an earlier version holds the folder: stop all dev servers and try again |
 | Contact form says verification failed | `TURNSTILE_SECRET_KEY` (backend) and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (website) must be the matching **test pair** or a matching real pair |
-| Booking stays "pending" after paying | `stripe listen` not running, or `STRIPE_WEBHOOK_SECRET` is not the value it printed |
+| Booking stays "pending" after paying | with the real sandbox: `stripe listen` not running, or `STRIPE_WEBHOOK_SECRET` is not the value it printed. With the pretend page: press **Pay (pretend)** on it |
+| "Online payment is not available right now" when booking a paid workshop | no usable payment mode: set `STRIPE_FAKE=true` with `STRIPE_SECRET_KEY=sk_test_xxx`, or put a real sandbox key in `STRIPE_SECRET_KEY` |
 | `Port 8787 / 3000 already in use` | close the other copy of the server |
 | Database looks wrong or broken | stop servers, delete `.wrangler/state`, run `npm run migrate:local` and `npm run seed` |
 | `npm` is blocked in PowerShell | use `npm.cmd` instead |
@@ -169,7 +189,7 @@ npm run typecheck       # types in all three packages
 npm run lint            # code style and common mistakes
 npm test                # unit tests (shared, Worker with real local D1/R2, website)
 npm run test:built-html # builds the site against a mock API and checks the generated HTML (the no-price rule, About, social links, languages)
-npm run test:e2e        # drives a real browser through the site and the admin (needs the seeded sample data; starts the servers itself)
+npm run test:e2e        # drives a real browser through the site, the admin and the whole booking journey (needs the seeded sample data; starts the servers itself, with the pretend payment page forced on). If you already run `npm run dev`, stop it first so the tests start their own Worker
 ```
 `npm run test:built-html` and `npm run build` both use the `apps/web/.next` folder, so stop `npm run dev` first. The first time you run the end-to-end tests, install the browser once: `npx playwright install chromium`.
 

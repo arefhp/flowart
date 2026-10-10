@@ -11,6 +11,7 @@ import {
   coverInput,
   eventInput,
   imageAltInput,
+  eventCancelInput,
   orderInput,
   parse,
   readJson,
@@ -37,7 +38,15 @@ import {
   updateCategory,
 } from '../services/categories';
 import {
+  adminCancelBooking,
+  bookingsCsv,
   cancelEvent,
+  getAdminBooking,
+  listAdminBookings,
+  markHandled,
+  processCancelledEventBookings,
+} from '../services/bookings-admin';
+import {
   createEvent,
   deleteEvent,
   getAdminEvent,
@@ -108,10 +117,65 @@ adminRoutes.post('/events/:id/unpublish', async (c) => {
   return c.json(event);
 });
 
+/**
+ * Cancel a workshop. With bookings, the first call answers 409 "confirmation_required" with the numbers;
+ * the admin confirms and the call is repeated with { confirm: true }, which refunds and emails everyone.
+ */
 adminRoutes.post('/events/:id/cancel', async (c) => {
-  const event = await cancelEvent(c.env, c.req.param('id'));
-  await changed(c, 'event.cancel', 'event', event.id);
-  return c.json(event);
+  const body = parse(eventCancelInput, await readJson(c.req.raw).catch(() => ({})));
+  const result = await cancelEvent(c.env, c.req.param('id'), body.confirm === true);
+  await changed(c, 'event.cancel', 'event', result.event.id, {
+    bookings: result.summary.confirmedBookings,
+    refunded: result.refunds.done,
+    needs_attention: result.refunds.failed,
+  });
+  return c.json({ ...result.event, refunds: result.refunds, summary: result.summary });
+});
+
+/** Carry on refunding a cancelled workshop's bookings (the scheduled job does this too). */
+adminRoutes.post('/events/:id/refunds', async (c) => {
+  const refunds = await processCancelledEventBookings(c.env, { eventId: c.req.param('id') });
+  await audit(c.env, actor(c), 'event.refunds', 'event', c.req.param('id'), { ...refunds });
+  return c.json(refunds);
+});
+
+// ---- bookings ----
+const bookingFilter = (c: C) => ({
+  eventId: c.req.query('event') || undefined,
+  status: c.req.query('status') || undefined,
+  needsAttention: c.req.query('attention') === '1',
+});
+
+adminRoutes.get('/bookings', async (c) => c.json({ bookings: await listAdminBookings(c.env, bookingFilter(c)) }));
+
+// Defined before the :id routes so "export.csv" is not read as a booking id.
+adminRoutes.get('/bookings/export.csv', async (c) => {
+  const csv = bookingsCsv(await listAdminBookings(c.env, bookingFilter(c), 2000));
+  await audit(c.env, actor(c), 'booking.export', 'booking');
+  return new Response('﻿' + csv, {
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="bookings.csv"',
+      'Cache-Control': 'no-store',
+    },
+  });
+});
+
+adminRoutes.get('/bookings/:id', async (c) => c.json(await getAdminBooking(c.env, c.req.param('id'))));
+
+/** Cancel a booking; a paid one is refunded in full. */
+adminRoutes.post('/bookings/:id/cancel', async (c) => {
+  const id = c.req.param('id');
+  const result = await adminCancelBooking(c.env, id);
+  await audit(c.env, actor(c), 'booking.cancel', 'booking', id, { outcome: result.outcome });
+  return c.json({ ...(await getAdminBooking(c.env, id)), outcome: result.outcome });
+});
+
+/** The owner dealt with a flagged booking by hand (for example refunded it in Stripe). */
+adminRoutes.post('/bookings/:id/handled', async (c) => {
+  const booking = await markHandled(c.env, c.req.param('id'));
+  await audit(c.env, actor(c), 'booking.handled', 'booking', booking.id);
+  return c.json(booking);
 });
 
 adminRoutes.delete('/events/:id', async (c) => {

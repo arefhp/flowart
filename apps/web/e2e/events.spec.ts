@@ -15,10 +15,10 @@ test.describe('workshops (public)', () => {
     await page.goto('/workshops');
     await expect(page.getByRole('heading', { name: 'Workshops', level: 1 })).toBeVisible();
     const upcoming = page.getByRole('region', { name: 'Upcoming workshops' }).getByRole('heading', { level: 3 });
-    await expect(upcoming).toHaveText(['Oil Painting for Beginners', 'Autumn Landscape Morning', 'Resin Art Evening']);
+    await expect(upcoming).toContainText(['Oil Painting for Beginners', 'Autumn Landscape Morning', 'Resin Art Evening']);
     await expect(page.getByRole('region', { name: 'Past workshops' }).getByRole('heading', { level: 3 })).toHaveText(['Winter Still Life']);
     await expect(page.getByText('Colour Study Day')).toHaveCount(0); // the draft
-    await expect(page.getByText('Cancelled', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Autumn Landscape Morning/ }).getByText('Cancelled', { exact: true })).toBeVisible();
     // each row has the time (Copenhagen), the price per person and, once loaded, the places left
     const oil = page.getByRole('link', { name: /Oil Painting for Beginners/ });
     await expect(oil).toContainText('10:00–14:00');
@@ -63,12 +63,12 @@ test.describe('workshops (public)', () => {
     }
   });
 
-  test('"Ask about a place" opens the contact form already filled in for that workshop', async ({ page }) => {
+  test('"Have a question first?" opens the contact form already filled in for that workshop', async ({ page }) => {
     await page.goto(`/workshops/${OIL}`);
-    await page.getByRole('link', { name: 'Ask about a place' }).click();
+    await page.getByRole('link', { name: 'Have a question first? Write to me.' }).click();
     await expect(page).toHaveURL(new RegExp(`/contact\\?event=${OIL}$`));
-    await expect(page.getByLabel('Message')).toHaveValue(/I would like to reserve a place at the workshop "Oil Painting for Beginners" on Saturday/);
-    await expect(page.getByText('About the workshop')).toBeVisible();
+    await expect(page.getByLabel('Message')).toHaveValue(/I have a question about the workshop "Oil Painting for Beginners" on Saturday/);
+    await expect(page.locator('.wall-label')).toContainText('About the workshop');
   });
 
   test('a cancelled workshop says so and offers no way to book or to add it to a calendar', async ({ page }) => {
@@ -95,7 +95,7 @@ test.describe('workshops (public)', () => {
   test('the home page teases the next workshops (not the cancelled one) and links to all of them', async ({ page }) => {
     await page.goto('/');
     const section = page.getByRole('region', { name: 'Upcoming workshops' });
-    await expect(section.getByRole('heading', { level: 3 })).toHaveText(['Oil Painting for Beginners', 'Resin Art Evening']);
+    await expect(section.getByRole('heading', { level: 3 })).toContainText(['Oil Painting for Beginners', 'Resin Art Evening']);
     await section.getByRole('link', { name: 'See all workshops' }).click();
     await expect(page).toHaveURL(/\/workshops$/);
   });

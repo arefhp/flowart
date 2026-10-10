@@ -58,10 +58,10 @@ export const CHECKS = {
         hint: 'Production only. Locally the rebuild is skipped and the admin says so.',
       },
       {
-        name: 'payments (Milestone 3)',
+        name: 'payments (Stripe sandbox)',
         when: () => false,
         vars: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'],
-        hint: 'Needed from Milestone 3: Stripe sandbox key and the whsec_ value printed by "stripe listen".',
+        hint: 'Optional locally: without them a built-in pretend payment page is used (STRIPE_FAKE=true). Set both to test with the real Stripe sandbox (the whsec_ value is printed by "stripe listen"). Required in production.',
       },
     ],
   },

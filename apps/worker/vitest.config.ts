@@ -25,6 +25,8 @@ export default defineConfig(async () => {
             EMAIL_DRIVER: 'console',
             TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',
             GITHUB_DISPATCH_TOKEN: '',
+            STRIPE_FAKE: 'true',
+            STRIPE_WEBHOOK_SECRET: 'whsec_test_secret_for_unit_tests',
           },
         },
       }),

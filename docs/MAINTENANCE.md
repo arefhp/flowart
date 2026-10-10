@@ -14,8 +14,9 @@ Free-tier limits change over time. **Verify every number below on the provider's
 On the Workers **Free** plan, each request to the Worker (anything under `/api/*`) may use only about **10 ms of CPU time**. This is CPU time, not waiting time: time spent waiting for D1, R2 or Stripe does not count, but parsing, signature checks, JSON handling and the Stripe SDK do. Static pages and images are not Worker requests and are not affected.
 
 ### Which parts are most exposed
-- Stripe webhook handling (signature verification, then updating the booking)
-- Creating a Stripe Checkout session (booking request)
+- Stripe webhook handling (signature verification, then updating the booking). The signature check uses the built-in Web Crypto API, not the Stripe SDK
+- Creating a Stripe Checkout session (booking request). Stripe is called with plain `fetch` (no SDK), to keep the Worker small and fast
+- Cancelling a workshop that has many bookings: refunds are sent 10 per run (each refund is a Stripe call, and the free plan allows about 50 subrequests per request); the scheduled job (every 15 minutes) finishes the rest
 - Verifying the Cloudflare Access sign-in token on `/api/admin/*` requests
 - Large admin payloads (for example saving many social links or a long About text)
 

@@ -1,6 +1,7 @@
 import type { Env } from './env';
 import { flushOutbox } from './email';
 import { rebuildCatchUp } from './lib/rebuild';
+import { bookingMaintenance } from './services/bookings-admin';
 import { completePastEvents } from './services/events';
 import { retryFailedDeletes } from './services/images';
 
@@ -23,6 +24,7 @@ export async function runScheduled(cron: string, env: Env): Promise<void> {
   }
   await safe('email outbox', () => flushOutbox(env, { limit: 25 }));
   await safe('r2 delete retry', () => retryFailedDeletes(env));
+  await safe('booking holds and refunds', () => bookingMaintenance(env));
   await safe('complete past events', () => completePastEvents(env));
   await safe('rebuild catch-up', () => rebuildCatchUp(env));
 }

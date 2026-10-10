@@ -1,4 +1,5 @@
 import { localePath, pickText, slugify, utcToLocal, type Locale } from '@flowart/shared';
+import { holdMinutes } from '../config';
 import type { Env } from '../env';
 import { HttpError, notFound, nowIso, uuid } from '../lib/http';
 import { buildIcs } from '../lib/ics';
@@ -6,7 +7,7 @@ import type { EventInput } from '../schemas';
 
 export type EventStatus = 'draft' | 'published' | 'cancelled' | 'completed';
 
-interface EventRow {
+export interface EventRow {
   id: string;
   title: string;
   title_da: string | null;
@@ -128,6 +129,8 @@ export interface Availability {
   /** open for booking right now (published, not started, places left) */
   bookable: boolean;
   maxPerBooking: number;
+  /** minutes unpaid places are held, shown on the booking form */
+  holdMinutes: number;
 }
 
 function availabilityFor(row: EventRow, booked: Booked, env: Env, now = Date.now()): Availability {
@@ -145,6 +148,7 @@ function availabilityFor(row: EventRow, booked: Booked, env: Env, now = Date.now
     soldOut: remaining === 0,
     bookable: row.status === 'published' && !isPast && remaining > 0,
     maxPerBooking: Math.min(maxPerBooking, Math.max(remaining, 1)),
+    holdMinutes: holdMinutes(env),
   };
 }
 
@@ -219,7 +223,7 @@ export function adminEventDto(row: EventRow, booked: Booked) {
   };
 }
 
-async function getRow(env: Env, id: string): Promise<EventRow> {
+export async function getRow(env: Env, id: string): Promise<EventRow> {
   const row = await env.DB.prepare('SELECT * FROM events WHERE id = ?1').bind(id).first<EventRow>();
   if (!row) throw notFound('Event not found');
   return row;
@@ -342,29 +346,6 @@ export async function unpublishEvent(env: Env, id: string) {
     throw new HttpError(409, 'has_bookings', 'This event has bookings, so it cannot go back to draft. Cancel it instead.');
   }
   await env.DB.prepare(`UPDATE events SET status = 'draft' WHERE id = ?1`).bind(id).run();
-  return getAdminEvent(env, id);
-}
-
-/**
- * Cancel an event. Visitors then see it as cancelled and cannot book. Cancelling an event that
- * already has bookings also has to refund them, which arrives with online booking (Milestone 3):
- * until then it is refused rather than leaving paid bookings in limbo.
- */
-export async function cancelEvent(env: Env, id: string) {
-  const row = await getRow(env, id);
-  if (row.status === 'cancelled' || row.status === 'completed') {
-    throw new HttpError(409, 'not_cancellable', `This event is already ${row.status}.`);
-  }
-  const booked = (await bookedByEvent(env, [id])).get(id) ?? NO_BOOKINGS;
-  if (booked.confirmed + booked.held > 0) {
-    throw new HttpError(
-      409,
-      'has_bookings',
-      `This event has ${booked.confirmed + booked.held} booked place(s). Cancelling an event with bookings, and refunding them, comes with online booking (Milestone 3).`,
-      { booked_places: booked.confirmed + booked.held },
-    );
-  }
-  await env.DB.prepare(`UPDATE events SET status = 'cancelled' WHERE id = ?1`).bind(id).run();
   return getAdminEvent(env, id);
 }
 

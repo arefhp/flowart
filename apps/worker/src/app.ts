@@ -3,6 +3,7 @@ import { isLocal } from './config';
 import { errorBody, HttpError, notFound, type AppBindings } from './lib/http';
 import { configGuard, requestContext } from './middleware';
 import { adminRoutes } from './routes/admin';
+import { bookingRoutes } from './routes/booking-routes';
 import { publicRoutes } from './routes/public';
 
 /** Keys the local media route will serve: server-generated artwork and About variants only. */
@@ -15,6 +16,7 @@ export function createApp() {
   app.use('/api/*', configGuard);
 
   app.route('/api', publicRoutes);
+  app.route('/api', bookingRoutes);
   app.route('/api/admin', adminRoutes);
 
   /**

@@ -25,7 +25,7 @@ const created = async (extra: Record<string, unknown> = {}) => {
   return (await res.json()) as Ev;
 };
 const fieldError = async (res: Response) =>
-  ((await res.json()) as { error: { message: string; details?: { fields?: Record<string, string> } } }).error;
+  ((await res.json()) as { error: { code: string; message: string; details?: { fields?: Record<string, string> } } }).error;
 
 const FUTURE_HOLD = new Date(Date.now() + 20 * 60_000).toISOString();
 const PAST_HOLD = new Date(Date.now() - 5 * 60_000).toISOString();
@@ -150,7 +150,7 @@ describe('editing, publishing and cancelling', () => {
     expect((await fieldError(res)).message).toContain('has bookings');
   });
 
-  it('cancel makes the event cancelled; twice is refused; an event with booked places cannot be cancelled yet', async () => {
+  it('cancel makes the event cancelled; twice is refused; with bookings it asks for confirmation first', async () => {
     const ev = await insertEvent();
     expect(await (await adminJson(`/api/admin/events/${ev.id}/cancel`, 'POST', {})).json()).toMatchObject({ status: 'cancelled' });
     expect((await adminJson(`/api/admin/events/${ev.id}/cancel`, 'POST', {})).status).toBe(409);
@@ -159,7 +159,8 @@ describe('editing, publishing and cancelling', () => {
     await insertBooking(withBooking.id);
     const res = await adminJson(`/api/admin/events/${withBooking.id}/cancel`, 'POST', {});
     expect(res.status).toBe(409);
-    expect((await fieldError(res)).message).toContain('Milestone 3');
+    const err = await fieldError(res);
+    expect(err.code).toBe('confirmation_required');
     expect(((await (await call(`/api/admin/events/${withBooking.id}`)).json()) as Ev).status).toBe('published'); // untouched
   });
 

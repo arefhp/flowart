@@ -157,3 +157,44 @@ export interface RebuildStatus {
   contentUpdatedAt: string | null;
   lastTriggeredAt: string | null;
 }
+
+export interface AdminBooking {
+  id: string;
+  reference: string;
+  event_id: string;
+  event_title: string;
+  event_slug: string;
+  event_status: AdminEvent['status'];
+  event_starts_at: string;
+  event_timezone: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
+  locale: 'en' | 'da';
+  participants: number;
+  amount_minor: number;
+  currency: string;
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  booking_status: 'pending' | 'confirmed' | 'cancelled' | 'expired';
+  needs_attention: boolean;
+  attention_note: string | null;
+  hold_expires_at: string | null;
+  has_payment: boolean;
+  created_at: string;
+}
+
+/** What the server says when cancelling a workshop that has bookings needs the owner's OK. */
+export interface CancelSummary {
+  confirmedBookings: number;
+  confirmedPlaces: number;
+  paidBookings: number;
+  refundMinor: number;
+  currency: string;
+  pendingHolds: number;
+}
+
+export interface RefundProgress {
+  done: number;
+  failed: number;
+  remaining: number;
+}

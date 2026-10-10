@@ -3,9 +3,18 @@ import { app } from '../src/index';
 import type { Env } from '../src/env';
 import { nowIso, uuid } from '../src/lib/http';
 
+export const WEBHOOK_SECRET = 'whsec_test_secret_for_unit_tests';
+
 /** The default test environment: local development with the admin bypass on. */
 export function testEnv(overrides: Partial<Record<keyof Env, unknown>> = {}): Env {
-  return { ...(env as unknown as Env), ...(overrides as Partial<Env>) };
+  return {
+    ...(env as unknown as Env),
+    // Tests must never reach the real Stripe, even when a developer's .dev.vars holds a real sandbox key.
+    STRIPE_SECRET_KEY: '',
+    STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
+    STRIPE_FAKE: 'true',
+    ...(overrides as Partial<Env>),
+  };
 }
 
 export const ADMIN_HEADERS = {
@@ -220,19 +229,46 @@ export async function insertEvent(fields: Partial<EventFields> = {}): Promise<{ 
 }
 
 /** Insert a booking row (the booking flow itself arrives in Milestone 3). */
-export async function insertBooking(
-  eventId: string,
-  opts: { participants?: number; booking_status?: string; payment_status?: string; hold_expires_at?: string | null } = {},
-): Promise<string> {
+export interface BookingFields {
+  participants?: number;
+  booking_status?: string;
+  payment_status?: string;
+  hold_expires_at?: string | null;
+  amount_minor?: number;
+  payment_intent?: string | null;
+  session_id?: string | null;
+  locale?: 'en' | 'da';
+  email?: string;
+  name?: string;
+  token?: string;
+}
+
+export async function insertBooking(eventId: string, opts: BookingFields = {}): Promise<string> {
   const id = uuid();
   const now = nowIso();
+  const participants = opts.participants ?? 1;
   await env.DB.prepare(
     `INSERT INTO event_bookings (id, event_id, public_token, customer_name, customer_email, locale, number_of_participants,
-       amount_minor, currency, payment_status, booking_status, hold_expires_at, created_at, updated_at)
-     VALUES (?1,?2,?3,'Test Person','test@example.com','en',?4,?5,'DKK',?6,?7,?8,?9,?9)`,
+       amount_minor, currency, payment_status, booking_status, hold_expires_at, stripe_payment_intent_id,
+       stripe_checkout_session_id, created_at, updated_at)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,'DKK',?9,?10,?11,?12,?13,?14,?14)`,
   )
-    .bind(id, eventId, uuid(), opts.participants ?? 1, (opts.participants ?? 1) * 45000, opts.payment_status ?? 'paid',
-      opts.booking_status ?? 'confirmed', opts.hold_expires_at ?? null, now)
+    .bind(
+      id,
+      eventId,
+      opts.token ?? uuid(),
+      opts.name ?? 'Test Person',
+      opts.email ?? 'test@example.com',
+      opts.locale ?? 'en',
+      participants,
+      opts.amount_minor ?? participants * 45000,
+      opts.payment_status ?? 'paid',
+      opts.booking_status ?? 'confirmed',
+      opts.hold_expires_at ?? null,
+      opts.payment_intent ?? null,
+      opts.session_id ?? null,
+      now,
+    )
     .run();
   return id;
 }

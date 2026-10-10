@@ -44,6 +44,21 @@ export function allowedAdminOrigins(env: Env): string[] {
   return origins;
 }
 
+/**
+ * How payments run: 'real' (Stripe, sandbox or live keys), 'fake' (local-only pretend payment page,
+ * used only while no real key is set) or 'off' (booking a paid workshop answers 503).
+ */
+export function stripeMode(env: Env): 'real' | 'fake' | 'off' {
+  if (!isPlaceholder(env.STRIPE_SECRET_KEY)) return 'real';
+  if (isLocal(env) && env.STRIPE_FAKE === 'true') return 'fake';
+  return 'off';
+}
+
+/** Unpaid places are held this long. At least 30: Stripe keeps a payment page open for 30 minutes or more. */
+export function holdMinutes(env: Env): number {
+  return Math.max(30, Number(env.BOOKING_HOLD_MINUTES ?? '30') || 30);
+}
+
 export function adminBypassActive(env: Env): boolean {
   return isLocal(env) && env.ADMIN_DEV_BYPASS === 'true';
 }
@@ -80,6 +95,11 @@ export function configProblems(env: Env): string[] {
   ) {
     problems.push('TURNSTILE_SECRET_KEY (test key is not allowed in production)');
   }
+  if (env.STRIPE_FAKE !== undefined && env.STRIPE_FAKE !== '' && env.STRIPE_FAKE !== 'false') {
+    problems.push('STRIPE_FAKE (must not be set in production)');
+  }
+  if (isPlaceholder(env.STRIPE_SECRET_KEY)) problems.push('STRIPE_SECRET_KEY');
+  if (isPlaceholder(env.STRIPE_WEBHOOK_SECRET)) problems.push('STRIPE_WEBHOOK_SECRET');
   if (env.EMAIL_DRIVER !== 'resend') {
     problems.push('EMAIL_DRIVER (must be "resend" in production)');
   } else {

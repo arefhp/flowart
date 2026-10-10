@@ -17,6 +17,9 @@ const goodProd = {
   EMAIL_DRIVER: 'resend',
   RESEND_API_KEY: 're_live_abcdefghijk',
   TURNSTILE_SECRET_KEY: '0x4AAAAAAAreal-secret-value',
+  STRIPE_SECRET_KEY: 'sk_test_realvalue1234567890',
+  STRIPE_WEBHOOK_SECRET: 'whsec_realvalue1234567890',
+  STRIPE_FAKE: undefined,
 };
 
 afterEach(() => vi.restoreAllMocks());

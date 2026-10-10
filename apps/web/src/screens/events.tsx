@@ -142,7 +142,7 @@ export async function EventScreen({ locale, slug }: { locale: Locale; slug: stri
             </dl>
 
             <div className="mt-8">
-              <EventLive event={e} locale={locale} t={t.events} builtAtMs={builtAtMs()} />
+              <EventLive event={e} locale={locale} t={t.events} booking={t.booking} labels={{ terms: t.footer.terms, privacy: t.footer.privacy }} builtAtMs={builtAtMs()} />
             </div>
 
             {!cancelled ? (

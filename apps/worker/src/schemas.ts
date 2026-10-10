@@ -178,6 +178,24 @@ export const contactInput = z.object({
   turnstileToken: z.string().max(4096).optional(),
 });
 
+export const bookingInput = z.object({
+  name: requiredText(LIMITS.contactNameMax, 'Your name'),
+  email: z
+    .string()
+    .trim()
+    .refine((v) => isValidEmail(v), 'Please enter a valid email address.'),
+  phone: optText(40),
+  participants: z
+    .number({ error: 'Choose how many places.' })
+    .int('Choose how many places.')
+    .min(1, 'Choose at least 1 place.')
+    .max(100, 'Choose how many places.'),
+  locale: z.enum(LOCALES).default('en'),
+  consent: z.literal(true, { error: 'Please tick the box to continue.' }),
+  turnstileToken: z.string().max(4096).optional(),
+});
+export type BookingInput = z.infer<typeof bookingInput>;
+
 /** Parse with zod and throw the API's consistent 400 error with per-field messages. */
 export function parse<T extends z.ZodType>(schema: T, data: unknown): z.infer<T> {
   const result = schema.safeParse(data);

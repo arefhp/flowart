@@ -74,9 +74,7 @@ Tone: warm and personal, like an artist's studio. Informal "du" in Danish.
 | Workshop page | Cancelled / This workshop has been cancelled. / This workshop has finished. | Aflyst / Denne workshop er aflyst. / Denne workshop er afholdt. |
 | Workshop page | Copenhagen time | dansk tid |
 | Workshop page | Add to calendar | Tilføj til kalender |
-| Workshop page (until online booking) | Ask about a place | Spørg om en plads |
-| Workshop page | Online booking is coming soon. Until then, write to me to reserve a place. | Onlinebooking kommer snart. Indtil da kan du skrive til mig for at reservere en plads. |
-| Contact (from a workshop) | I would like to reserve a place at the workshop "{title}" on {date}. | Jeg vil gerne reservere en plads på workshoppen "{title}" den {date}. |
+| Contact (from a workshop) | I have a question about the workshop "{title}" on {date}. | Jeg har et spørgsmål om workshoppen "{title}" den {date}. |
 | Contact | About the workshop | Om workshoppen |
 | Calendar | Calendar / All workshops by date. | Kalender / Alle workshops efter dato. |
 | Calendar | Previous month / Next month / No workshops this month. | Forrige måned / Næste måned / Ingen workshops i denne måned. |
@@ -95,6 +93,77 @@ Tone: warm and personal, like an artist's studio. Informal "du" in Danish.
 | Artwork page | Category | Kategori |
 | Footer | Privacy policy | Privatlivspolitik |
 | Footer | Terms | Vilkår |
+
+**Booking and payment (Milestone 3).** The booking form, the "thank you" and "payment cancelled" pages, and the emails customers receive. Emails to the owner are always English. These wordings are drafts for a Danish speaker to review. The "refund" and "24 hours" sentences are the owner-confirmed policy (full refund when the customer emails at least 24 hours before the start); nothing here mentions VAT, a phone number or legal clauses.
+
+| Where | English | Dansk |
+|---|---|---|
+| Booking: title | Book your place | Book din plads |
+| Booking: name | Your name | Dit navn |
+| Booking: email | Email | E-mail |
+| Booking: emailNote | Your confirmation is sent to this address. | Din bekræftelse sendes til denne adresse. |
+| Booking: phone | Phone (optional) | Telefon (valgfrit) |
+| Booking: participants | Number of places | Antal pladser |
+| Booking: onePlace | 1 place | 1 plads |
+| Booking: nPlaces | {n} places | {n} pladser |
+| Booking: total | Total | I alt |
+| Booking: freeNote | This workshop is free. No payment is needed. | Denne workshop er gratis. Du skal ikke betale noget. |
+| Booking: holdNote | Your places are held for {minutes} minutes while you pay. | Dine pladser er reserveret i {minutes} minutter, mens du betaler. |
+| Booking: cancelNotice | Free cancellation: email me at least 24 hours before the workshop starts and you get a full refund. | Gratis afbestilling: skriv til mig senest 24 timer før workshoppen starter, så får du pengene tilbage. |
+| Booking: consent | I have read the {terms} and the {privacy}. | Jeg har læst {terms} og {privacy}. |
+| Booking: payButton | Pay {amount} | Betal {amount} |
+| Booking: freeButton | Book my place | Book min plads |
+| Booking: working | One moment... | Et øjeblik... |
+| Booking: goingToPayment | Taking you to the secure payment page... | Sender dig videre til den sikre betalingsside... |
+| Booking: askQuestion | Have a question first? Write to me. | Har du et spørgsmål først? Skriv til mig. |
+| Booking: nameRequired | Please enter your name. | Skriv dit navn. |
+| Booking: emailInvalid | Please enter a valid email address. | Skriv en gyldig e-mailadresse. |
+| Booking: consentRequired | Please tick the box to continue. | Sæt kryds i feltet for at fortsætte. |
+| Booking: soldOut | Sorry, this workshop has just sold out. | Beklager, workshoppen er netop blevet udsolgt. |
+| Booking: notEnough | Only {n} places are left. Please choose fewer. | Der er kun {n} pladser tilbage. Vælg færre. |
+| Booking: closed | This workshop can no longer be booked. | Denne workshop kan ikke længere bookes. |
+| Booking: paymentsOff | Online payment is not available right now. Please write to me to book. | Onlinebetaling er ikke tilgængelig lige nu. Skriv til mig for at booke. |
+| Booking: paymentFailed | We could not start the payment. Nothing was charged. Please try again. | Vi kunne ikke starte betalingen. Der er ikke trukket penge. Prøv igen. |
+| Booking: rateLimited | Too many attempts. Please try again later. | For mange forsøg. Prøv igen senere. |
+| Booking: humanCheck | We could not verify that you are human. Please try again. | Vi kunne ikke bekræfte, at du er et menneske. Prøv igen. |
+| Booking: humanLoading | Loading the spam check... | Indlæser spamkontrollen... |
+| Booking: humanFailed | The spam check could not load. Please reload the page. | Spamkontrollen kunne ikke indlæses. Genindlæs siden. |
+| Booking: error | Something went wrong. Please try again or write to info@zfadavi.com. | Noget gik galt. Prøv igen eller skriv til info@zfadavi.com. |
+| Booking: confirmedTitle | Your place is booked | Din plads er booket |
+| Booking: confirmedBody | A confirmation with the details and a calendar file is on its way to {email}. | En bekræftelse med detaljer og en kalenderfil er på vej til {email}. |
+| Booking: waitingTitle | Confirming your payment... | Bekræfter din betaling... |
+| Booking: waitingBody | This usually takes a few seconds. You can keep this page open. | Det tager normalt et par sekunder. Du kan lade siden stå åben. |
+| Booking: slowTitle | Your payment is being confirmed | Din betaling bliver bekræftet |
+| Booking: slowBody | This is taking a little longer than usual. Your booking is saved, and we will email you as soon as the payment is confirmed. | Det tager lidt længere tid end normalt. Din booking er gemt, og vi sender en e-mail, så snart betalingen er bekræftet. |
+| Booking: expiredTitle | This booking has expired | Denne booking er udløbet |
+| Booking: expiredBody | The payment was not completed, so the places were released. You are welcome to book again. | Betalingen blev ikke gennemført, så pladserne er givet fri. Du er velkommen til at booke igen. |
+| Booking: cancelledTitle | This booking has been cancelled | Denne booking er aflyst |
+| Booking: cancelledBody | If you paid, the full amount is refunded to your card. | Hvis du har betalt, får du hele beløbet tilbage på dit kort. |
+| Booking: notFoundTitle | We could not find this booking | Vi kunne ikke finde denne booking |
+| Booking: notFoundBody | Please check the link in your email, or write to us. | Tjek linket i din e-mail, eller skriv til os. |
+| Booking: paymentCancelledTitle | Payment cancelled | Betaling afbrudt |
+| Booking: paymentCancelledBody | You have not been charged. Your places stay reserved for a short while, so you can go back and try again. | Der er ikke trukket penge. Dine pladser er reserveret et kort stykke tid, så du kan gå tilbage og prøve igen. |
+| Booking: backToWorkshop | Back to the workshop | Tilbage til workshoppen |
+| Booking: allWorkshops | See all workshops | Se alle workshops |
+| Booking: workshop | Workshop | Workshop |
+| Booking: date | Date | Dato |
+| Booking: time | Time | Tidspunkt |
+| Booking: places | Places | Pladser |
+| Booking: totalLabel | Total | I alt |
+| Booking: reference | Booking reference | Bookingreference |
+| Email to customer: subject (confirmed) | Your place at {title} is booked | Din plads til {title} er booket |
+| Email to customer: intro | Thank you for booking. Your place is confirmed. Here are the details: | Tak for din booking. Din plads er bekræftet. Her er detaljerne: |
+| Email to customer: calendar file | A calendar file is attached, so you can add the workshop to your calendar. | Der er vedhæftet en kalenderfil, så du kan lægge workshoppen ind i din kalender. |
+| Email to customer: cancellation rule | If you need to cancel, reply to this email at least 24 hours before the workshop starts and we will refund you in full. | Hvis du skal afbestille, så svar på denne mail senest 24 timer før workshoppen starter, så får du pengene tilbage. |
+| Email to customer: sign-off | See you soon! / Zakereh Art | Vi ses! / Zakereh Art |
+| Email to customer: subject (cancelled) | Your booking for {title} is cancelled | Din booking til {title} er aflyst |
+| Email to customer: cancelled by the artist | We are sorry, but we have had to cancel the workshop "{title}". | Vi er kede af det, men vi har måttet aflyse workshoppen "{title}". |
+| Email to customer: cancelled as agreed | Your booking for "{title}" has been cancelled, as agreed. | Din booking til "{title}" er aflyst, som aftalt. |
+| Email to customer: refund | We have refunded {amount} to the card you paid with. Depending on your bank it can take a few days to show up. | Vi har refunderet {amount} til det kort, du betalte med. Afhængigt af din bank kan der gå nogle dage, før det vises. |
+| Email to customer: free booking cancelled | You did not pay anything for this booking. | Du har ikke betalt noget for denne booking. |
+| Email to customer: late payment, subject | Your payment for {title} has been refunded | Din betaling til {title} er refunderet |
+| Email to customer: late payment, body | Your payment for "{title}" reached us after the places we were holding for you had been released, and the workshop could no longer take your booking. | Din betaling til "{title}" nåede frem, efter at de pladser, vi holdt til dig, var givet fri, og workshoppen kunne ikke længere tage imod din booking. |
+| Email to customer: closing line | Sorry for the trouble. You are always welcome to write to us. | Undskyld ulejligheden. Du er altid velkommen til at skrive til os. |
 
 ---
 

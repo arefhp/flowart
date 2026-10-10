@@ -33,13 +33,15 @@ export interface AppEnv {
   GITHUB_REPO?: string;
   GITHUB_DISPATCH_TOKEN?: string;
 
-  // Booking (used from Milestone 3)
+  // Booking
   BOOKING_MAX_PARTICIPANTS?: string;
   BOOKING_HOLD_MINUTES?: string;
 
-  // Stripe (used from Milestone 3)
+  // Stripe
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  /** 'true' = local-only fake Stripe (no account needed). Ignored when a real key is set; refused in production. */
+  STRIPE_FAKE?: string;
 }
 
 export type Env = AppEnv;

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AdminApiError, adminApi, type AdminEvent } from '@/lib/admin-api';
+import { AdminApiError, adminApi, type AdminEvent, type CancelSummary, type RefundProgress } from '@/lib/admin-api';
 import { announceContentSaved } from './AdminShell';
 import { EventForm } from './EventForm';
 import { Notice, PageTitle } from './ui';
@@ -189,6 +189,67 @@ export function EditEvent() {
     }
   }
 
+  const money = (minor: number, currency: string) =>
+    new Intl.NumberFormat('en-GB', { style: 'currency', currency, maximumFractionDigits: minor % 100 === 0 ? 0 : 2 }).format(minor / 100);
+
+  /**
+   * Cancel the workshop. With no bookings it just cancels. With bookings the server first answers
+   * "confirmation required" with the numbers; the owner confirms and the call is repeated, which refunds
+   * every paid booking and emails everyone.
+   */
+  async function cancelEvent() {
+    if (!event) return;
+    // With nobody booked a plain question is enough; with bookings the server's numbers are shown instead.
+    if (event.booked_confirmed + event.booked_held === 0 && !window.confirm(`Cancel "${event.title}"? Visitors will see it as cancelled and nobody can book it.`)) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      let confirm = false;
+      for (;;) {
+        try {
+          const res = await adminApi.post<AdminEvent & { refunds?: RefundProgress }>(`/events/${event.id}/cancel`, confirm ? { confirm: true } : {});
+          setEvent(res);
+          announceContentSaved();
+          const r = res.refunds;
+          const failed = r && r.failed > 0;
+          const more = r && r.remaining > 0;
+          setNotice({
+            kind: failed ? 'error' : 'success',
+            text:
+              'The event is cancelled. The site shows it as cancelled.' +
+              (r ? ` ${r.done} booking${r.done === 1 ? '' : 's'} cancelled and refunded, and the customers emailed.` : '') +
+              (more ? ` ${r!.remaining} more are being refunded automatically over the next few minutes.` : '') +
+              (failed ? ` ${r!.failed} refund${r!.failed === 1 ? '' : 's'} did not go through: open Bookings and filter by "Needs attention".` : ''),
+          });
+          return;
+        } catch (e) {
+          if (!confirm && e instanceof AdminApiError && e.code === 'confirmation_required' && e.details) {
+            const d = e.details as unknown as CancelSummary;
+            const lines = [
+              `Cancel "${event.title}"?`,
+              '',
+              d.confirmedBookings > 0
+                ? `${d.confirmedBookings} booking${d.confirmedBookings === 1 ? '' : 's'} (${d.confirmedPlaces} place${d.confirmedPlaces === 1 ? '' : 's'}) will be cancelled and every customer is emailed.`
+                : 'Nobody has a confirmed booking yet.',
+              d.refundMinor > 0 ? `${money(d.refundMinor, d.currency)} will be refunded to the customers' cards.` : '',
+              d.pendingHolds > 0 ? `${d.pendingHolds} person${d.pendingHolds === 1 ? ' is' : 's are'} in the middle of paying; their places are released, and a payment that still arrives is refunded.` : '',
+              '',
+              'This cannot be undone.',
+            ].filter((l, i, all) => l !== '' || (i > 0 && all[i - 1] !== ''));
+            if (!window.confirm(lines.join('\n'))) return;
+            confirm = true;
+            continue;
+          }
+          throw e;
+        }
+      }
+    } catch (e) {
+      setNotice({ kind: 'error', text: e instanceof AdminApiError ? e.message : 'Something went wrong.' });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function remove() {
     if (!event || !window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
     setBusy(true);
@@ -229,6 +290,13 @@ export function EditEvent() {
         <p className="text-stone">
           {localRange(event.starts_local, event.ends_local)} (Copenhagen time). Places booked: {placesText(event)}.
         </p>
+        {event.bookings_total > 0 ? (
+          <p>
+            <Link href={`/admin/bookings?event=${event.id}`} className="link">
+              See the bookings for this event
+            </Link>
+          </p>
+        ) : null}
         {created ? <Notice kind="success">Saved as a draft. Visitors cannot see it yet. Press Publish when it is ready.</Notice> : null}
         {notice ? <Notice kind={notice.kind}>{notice.text}</Notice> : null}
 
@@ -252,7 +320,7 @@ export function EditEvent() {
               type="button"
               className="btn text-alert"
               disabled={busy}
-              onClick={() => act('cancel', 'The event is cancelled. The site shows it as cancelled.', `Cancel "${event.title}"? Visitors will see it as cancelled and nobody can book it.`)}
+              onClick={cancelEvent}
             >
               Cancel event
             </button>

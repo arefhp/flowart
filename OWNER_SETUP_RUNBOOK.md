@@ -298,7 +298,7 @@ Start the Worker (`wrangler dev`, port 8787) and web (`:3000`) per the README. T
    - Session duration: e.g. 24 hours.
    - Copy the application's **Audience (AUD) tag** and give Claude the team name and AUD (not secret) so they go into `wrangler.jsonc` as `ACCESS_TEAM_NAME`, `ACCESS_AUD`; also set `ADMIN_EMAILS` to your address.
    - Test in a private browser window: `https://zfadavi.com/admin` must ask for your email and send a code, and `https://zfadavi.com/api/admin/me` must not work without signing in.
-6. **Stripe webhook:** Stripe -> Developers -> Webhooks -> add endpoint `https://zfadavi.com/api/stripe/webhook`, only the events listed in the implementation doc. Put its signing secret in the Worker secret `STRIPE_WEBHOOK_SECRET`.
+6. **Stripe webhook:** Stripe -> Developers -> Webhooks -> add endpoint `https://zfadavi.com/api/stripe/webhook` and select exactly these three events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`. Put its signing secret (`whsec_...`) in the Worker secret `STRIPE_WEBHOOK_SECRET`. The Worker refuses to start in production without `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, and never with `STRIPE_FAKE` set.
 7. **Cron triggers** are declared in `wrangler.jsonc` and deploy automatically; confirm under the Worker's **Settings -> Triggers**.
 8. **Optional but recommended:** one Cloudflare WAF rate-limit rule for `/api/*` (Security -> WAF -> Rate limiting rules; the free plan allows a rule or two).
 9. Check HTTPS: SSL/TLS mode **Full (strict)** is the default for Workers custom domains; leave it.

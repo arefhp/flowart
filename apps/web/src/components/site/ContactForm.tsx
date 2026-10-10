@@ -5,16 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { fmt, type Dict } from '@/i18n/dictionary';
 import { formatEventDate } from '@/lib/event-format';
-import { TURNSTILE_SITE_KEY, isTurnstileTestKey } from '@/lib/config';
-
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (el: HTMLElement, opts: Record<string, unknown>) => string;
-      reset: (id?: string) => void;
-    };
-  }
-}
+import { useTurnstile } from './use-turnstile';
 
 type Status = 'idle' | 'sending' | 'sent' | 'error';
 
@@ -39,10 +30,7 @@ export function ContactForm({ locale, t }: { locale: Locale; t: ContactStrings }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Status>('idle');
   const [formError, setFormError] = useState('');
-  const [token, setToken] = useState('');
-  const [humanState, setHumanState] = useState<'loading' | 'ready' | 'failed'>('loading');
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | undefined>(undefined);
+  const { token, state: humanState, widgetRef, reset: resetHuman, showWidget } = useTurnstile(locale);
   const prefilled = useRef(false);
 
   // look up the artwork the visitor asked about and pre-fill the message once
@@ -86,40 +74,6 @@ export function ContactForm({ locale, t }: { locale: Locale; t: ContactStrings }
     };
   }, [eventSlug, locale, t.reserveMessage]);
 
-  // Turnstile: the always-pass TEST key needs no script, so local development works offline
-  useEffect(() => {
-    if (isTurnstileTestKey(TURNSTILE_SITE_KEY)) {
-      setToken('local-test-token');
-      setHumanState('ready');
-      return;
-    }
-    let script = document.querySelector<HTMLScriptElement>('script[data-turnstile]');
-    const render = () => {
-      if (!window.turnstile || !widgetRef.current || widgetId.current) return;
-      widgetId.current = window.turnstile.render(widgetRef.current, {
-        sitekey: TURNSTILE_SITE_KEY,
-        language: locale,
-        callback: (tok: string) => {
-          setToken(tok);
-          setHumanState('ready');
-        },
-        'expired-callback': () => setToken(''),
-        'error-callback': () => setHumanState('failed'),
-      });
-    };
-    if (!script) {
-      script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      script.async = true;
-      script.dataset.turnstile = '1';
-      script.onerror = () => setHumanState('failed');
-      document.head.appendChild(script);
-    }
-    if (window.turnstile) render();
-    else script.addEventListener('load', render);
-    return () => script?.removeEventListener('load', render);
-  }, [locale]);
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const next: Record<string, string> = {};
@@ -156,10 +110,7 @@ export function ContactForm({ locale, t }: { locale: Locale; t: ContactStrings }
       setStatus('error');
       const code = body?.error?.code;
       setFormError(code === 'rate_limited' ? t.contact.rateLimited : code === 'turnstile_failed' ? t.contact.humanCheck : t.contact.error);
-      if (code === 'turnstile_failed') {
-        setToken('');
-        if (widgetId.current) window.turnstile?.reset(widgetId.current);
-      }
+      if (code === 'turnstile_failed') resetHuman();
     } catch {
       setStatus('error');
       setFormError(t.contact.error);
@@ -246,7 +197,7 @@ export function ContactForm({ locale, t }: { locale: Locale; t: ContactStrings }
         {fieldError('message')}
       </div>
 
-      {!isTurnstileTestKey(TURNSTILE_SITE_KEY) ? <div ref={widgetRef} /> : null}
+      {showWidget ? <div ref={widgetRef} /> : null}
 
       {formError ? (
         <p role="alert" className="text-alert">
