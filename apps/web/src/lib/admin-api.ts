@@ -9,6 +9,8 @@ export class AdminApiError extends Error {
     public readonly code: string,
     message: string,
     public readonly fields: Record<string, string> = {},
+    /** extra information from the server, for example which artworks block a category delete */
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -43,8 +45,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     data = null;
   }
   if (!res.ok) {
-    const err = (data as { error?: { code?: string; message?: string; details?: { fields?: Record<string, string> } } } | null)?.error;
-    throw new AdminApiError(res.status, err?.code ?? 'error', err?.message ?? `The server answered ${res.status}.`, err?.details?.fields);
+    const err = (data as { error?: { code?: string; message?: string; details?: Record<string, unknown> } } | null)?.error;
+    throw new AdminApiError(
+      res.status,
+      err?.code ?? 'error',
+      err?.message ?? `The server answered ${res.status}.`,
+      (err?.details?.fields as Record<string, string> | undefined) ?? {},
+      err?.details,
+    );
   }
   return data as T;
 }
@@ -88,6 +96,9 @@ export interface AdminArtwork {
   year: number | null;
   status: 'available' | 'reserved' | 'sold' | 'hidden';
   featured: boolean;
+  category_id: string | null;
+  category_name: string | null;
+  size_class: 'small' | 'medium' | 'large' | null;
   cover_image_id: string | null;
   images: AdminImage[];
   updated_at: string;
@@ -99,11 +110,21 @@ export interface AdminArtworkRow {
   title: string;
   status: AdminArtwork['status'];
   featured: boolean;
+  category_name: string | null;
+  size_class: 'small' | 'medium' | 'large' | null;
   price_minor: number | null;
   currency: string | null;
   image_count: number;
   cover: { url: string; width: number; height: number } | null;
   updated_at: string;
+}
+
+export interface AdminCategory {
+  id: string;
+  name: string;
+  name_da: string | null;
+  slug: string;
+  artwork_count: number;
 }
 
 export interface RebuildStatus {

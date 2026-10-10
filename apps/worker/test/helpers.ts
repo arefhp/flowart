@@ -96,7 +96,13 @@ export interface ArtworkFields {
   year: number | null;
   status: string;
   featured: boolean;
+  category_id: string;
+  size_class: string;
 }
+
+/** The two categories created by migration 0003. */
+export const FINE_ART_ID = 'a7d1c1d0-5b0e-4a4e-9d57-0c0f1e000001';
+export const RESIN_ID = 'a7d1c1d0-5b0e-4a4e-9d57-0c0f1e000002';
 
 export const baseArtwork: ArtworkFields = {
   title: 'Blue Hour',
@@ -113,6 +119,8 @@ export const baseArtwork: ArtworkFields = {
   year: null,
   status: 'available',
   featured: false,
+  category_id: FINE_ART_ID,
+  size_class: 'medium',
 };
 
 /** Insert an artwork straight into the database, optionally with images. Returns its id. */
@@ -126,11 +134,11 @@ export async function insertArtwork(
   const now = nowIso();
   await env.DB.prepare(
     `INSERT INTO artworks (id, title, title_da, slug, description, description_da, price_minor, currency, width_cm,
-       height_cm, depth_cm, medium, medium_da, year, status, featured, created_at, updated_at)
-     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?17)`,
+       height_cm, depth_cm, medium, medium_da, year, status, featured, category_id, size_class, created_at, updated_at)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)`,
   )
     .bind(id, a.title, a.title_da, slug, a.description, a.description_da, a.price_minor, a.currency, a.width_cm,
-      a.height_cm, a.depth_cm, a.medium, a.medium_da, a.year, a.status, a.featured ? 1 : 0, now)
+      a.height_cm, a.depth_cm, a.medium, a.medium_da, a.year, a.status, a.featured ? 1 : 0, a.category_id, a.size_class, now)
     .run();
   const imageIds: string[] = [];
   for (let i = 0; i < imageCount; i++) {

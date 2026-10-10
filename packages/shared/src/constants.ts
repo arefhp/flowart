@@ -8,6 +8,10 @@ export type ArtworkStatus = (typeof ARTWORK_STATUSES)[number];
 /** Statuses that are visible on the public site. `hidden` is never returned publicly. */
 export const PUBLIC_ARTWORK_STATUSES = ['available', 'reserved', 'sold'] as const;
 
+/** Size class chosen by the owner when adding an artwork; visitors can filter by it. */
+export const SIZE_CLASSES = ['small', 'medium', 'large'] as const;
+export type SizeClass = (typeof SIZE_CLASSES)[number];
+
 /** Nominal widths of the pre-generated WebP variants (section 10). */
 export const IMAGE_WIDTHS = [480, 960, 1920] as const;
 export type ImageWidth = (typeof IMAGE_WIDTHS)[number];
@@ -34,6 +38,7 @@ export const LIMITS = {
   contactNameMax: 120,
   contactMessageMax: 5000,
   contactMessageMin: 5,
+  categoryNameMax: 60,
   socialLinksMax: 12,
   socialUrlMax: 500,
   socialLabelMax: 60,

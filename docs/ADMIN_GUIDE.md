@@ -2,7 +2,7 @@
 
 For the owner. No coding needed. Everything below is done at **https://zfadavi.com/admin** (locally: http://localhost:3000/admin).
 
-> **What exists today (Milestone 1):** Overview, Artworks, About, Social links, Messages, Help, and the **Rebuild site** button. Sections 4 (Events), 5 (Bookings) and the Calendar part of section 6 describe what arrives in Milestones 2 and 3; they are not in the admin yet. If a screen is named differently in the finished app, tell Claude and update this guide.
+> **What exists today (Milestone 1):** Overview, Artworks, Categories, About, Social links, Messages, Help, and the **Rebuild site** button. Sections 4 (Events), 5 (Bookings) and the Calendar part of section 6 describe what arrives in Milestones 2 and 3; they are not in the admin yet. If a screen is named differently in the finished app, tell Claude and update this guide.
 
 ---
 
@@ -35,12 +35,13 @@ Only email addresses on your allow list can sign in. Anyone else gets a refusal 
    | Reserved | shown, marked reserved |
    | Sold | shown, marked sold |
    | Hidden | not on the public site at all (use for drafts) |
-5. **Featured:** tick to show it on the home page.
-6. **Images:** drag in one or more photos (JPEG, PNG or WebP). Your browser prepares the three web sizes for you; you only choose the original file. Use a sharp, well-lit photo. Write a short **alt text** for each (a sentence describing the painting, for people using screen readers; the Danish alt text is optional).
+5. **Category and size.** Choose the **category** (for example Fine Art or Resin) and the **size** (Small, Medium or Large). Both are required, because visitors use them to filter the gallery. The size does not have to match the centimetres exactly: choose what feels right. A new artwork starts in the first category. Manage the list in `Admin -> Categories` (section 2A).
+6. **Featured:** tick to show it on the home page.
+7. **Images:** drag in one or more photos (JPEG, PNG or WebP). Your browser prepares the three web sizes for you; you only choose the original file. Use a sharp, well-lit photo. Write a short **alt text** for each (a sentence describing the painting, for people using screen readers; the Danish alt text is optional).
    - **Cover image:** the gallery shows only **one image per artwork, its cover**. Click **Set as cover** on the image you want. If you never choose one, the first image is the cover.
    - **More images:** the other images (details, the back, the painting in a room, ...) appear on the artwork's own page. A visitor clicks the cover in the gallery, lands on that page, sees all the images as thumbnails, and can click any of them to view it large. The full **Description** is shown there too, so use it for the story, technique and details.
    - An artwork **with no images** is not shown on the public site (it is marked "No image: not shown publicly" in your list).
-7. **Save.** The site updates itself in a few minutes (section 7).
+8. **Save.** The site updates itself in a few minutes (section 7).
 
 **Edit / reorder / delete:** open the artwork from the list. Drag images to reorder them, remove an image with its delete button, or delete the whole artwork (this also deletes its stored images; it cannot be undone, so keep your original files).
 
@@ -48,8 +49,18 @@ Only email addresses on your allow list can sign in. Anyone else gets a refusal 
 
 Tips: use clear titles; images under about 10 MB are fine; keep your original high-resolution files on your own computer.
 
+## 2A. Categories (`Admin -> Categories`)
+Categories group your artworks, for example **Fine Art** and **Resin**. You choose one for every artwork, and visitors can filter the gallery by category.
+- **Add:** type the English name (and the Danish name if it differs; if you leave it empty, the English name is used in Danish) and press **Add category**. Two categories cannot have the same name.
+- **Rename:** change the name and press **Save**. The address used for filtering stays the same, so links people have shared keep working.
+- **Order:** **Move up / Move down** sets the order of the filter buttons on the site.
+- **Delete:** press **Delete**. If any artwork is still in the category (even a hidden one), you get an error that names those artworks, and nothing is deleted. Open each of them, choose another category, save, then delete the category. A category with no artworks deletes straight away.
+- A category only appears as a filter button on the site when it has at least one artwork that is shown to visitors, so you never get an empty button.
+
+**How visitors filter the gallery** (Artworks page, English and Danish): buttons for **Category**, **Size** (Small, Medium, Large), **Price range** and **Available only**, with "Showing 2 of 4" and **Clear filters**. A filter only appears when it gives a real choice: no Size buttons if every work is the same size, and **no Price filter at all unless at least one artwork has a price**. Artworks without a price never appear in a price range, and nothing about price is shown for them. The price ranges are Under DKK 5,000, DKK 5,000 to 15,000 and Over DKK 15,000 (a range is hidden when no artwork falls in it); to change them, see `docs/MAINTENANCE.md`.
+
 ## 3. About page (`Admin -> About`)
-- Edit the **heading** (optional) and the **text**, in English and (optionally) Danish. Leave a blank line between paragraphs. Text only; no formatting is needed. Until you add Danish, the Danish About page shows the English text.
+- Edit the **heading** (optional) and the **text**, in English and Danish. Leave a blank line between paragraphs. Text only; no formatting is needed. The Danish text starts as a translation of your English statement (please read it and reword anything that does not sound like you); if you ever clear the Danish box, the Danish page shows the English text again.
 - **Portrait:** drag in your photo, check the preview (it shows exactly how it will be cropped), write the **alt text** (required, e.g. "Portrait of the artist in her studio"), and Save. **Replace** swaps it; **Remove** takes it away, and the page then shows only the text.
 - A good portrait is portrait-orientation, at least 1200 px tall.
 
@@ -130,6 +141,9 @@ Live items such as remaining places and booking status are always fresh and do n
 | I need to change a price on an event with bookings | already-paid bookings keep the price they paid; the new price applies to new bookings |
 | How do I change the contact email shown on the site? | ask Claude (it is a setting, not a page edit) |
 | How do I change a page like Privacy or Terms? | ask Claude to edit it (these pages are part of the code, not the admin). They exist in English and Danish; the wording is in `docs/LANGUAGE_REVIEW.md` |
+| How do I add a category such as "Prints"? | `Admin -> Categories` -> **Add category**, then choose it on the artworks that belong to it (section 2A) |
+| Why can't I delete a category? | some artwork is still in it. The message lists them: move them to another category first (section 2A) |
+| Why is there no Price filter on the site? | the Price filter only appears when at least one artwork has a price. An artwork with no price never shows any price information |
 | How do I add Danish text? | in each form (artwork, About, event) fill the **Danish** box next to the English one. Leave it empty to show English |
 | Which language do customers' emails use? | the language of the page they booked from (English or Danish) |
 | What if the site gets slow or booking sometimes fails? | the free Cloudflare plan has a small per-request CPU limit; see `docs/MAINTENANCE.md` for how to raise it (about 5 USD/month) |

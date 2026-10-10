@@ -7,6 +7,7 @@ import { adminAuth, getCtx } from '../middleware';
 import {
   aboutInput,
   artworkInput,
+  categoryInput,
   coverInput,
   imageAltInput,
   orderInput,
@@ -27,6 +28,13 @@ import {
   updateArtwork,
   updateImageAlt,
 } from '../services/artworks';
+import {
+  createCategory,
+  deleteCategory,
+  listAdminCategories,
+  reorderCategories,
+  updateCategory,
+} from '../services/categories';
 import { validateUpload } from '../services/images';
 import { getAdminSocial, replaceSocial } from '../services/social';
 
@@ -57,6 +65,38 @@ async function readUpload(c: C): Promise<FormData> {
 }
 
 adminRoutes.get('/me', (c) => c.json({ email: actor(c), devMode: adminBypassActive(c.env) }));
+
+// ---- categories ----
+adminRoutes.get('/categories', async (c) => c.json({ categories: await listAdminCategories(c.env) }));
+
+adminRoutes.post('/categories', async (c) => {
+  const input = parse(categoryInput, await readJson(c.req.raw));
+  const category = await createCategory(c.env, input);
+  await changed(c, 'category.create', 'category', category.id, { name: category.name });
+  return c.json(category, 201);
+});
+
+// Defined before the :id routes so "order" is not read as a category id.
+adminRoutes.patch('/categories/order', async (c) => {
+  const { ids } = parse(orderInput, await readJson(c.req.raw));
+  const categories = await reorderCategories(c.env, ids);
+  await changed(c, 'category.order', 'category');
+  return c.json({ categories });
+});
+
+adminRoutes.put('/categories/:id', async (c) => {
+  const input = parse(categoryInput, await readJson(c.req.raw));
+  const category = await updateCategory(c.env, c.req.param('id'), input);
+  await changed(c, 'category.update', 'category', category.id, { name: category.name });
+  return c.json(category);
+});
+
+adminRoutes.delete('/categories/:id', async (c) => {
+  const id = c.req.param('id');
+  await deleteCategory(c.env, id);
+  await changed(c, 'category.delete', 'category', id);
+  return c.json({ ok: true });
+});
 
 // ---- artworks ----
 adminRoutes.get('/artworks', async (c) => c.json({ artworks: await listAdminArtworks(c.env) }));

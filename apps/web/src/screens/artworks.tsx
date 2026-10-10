@@ -1,15 +1,21 @@
 import { localePath, type Locale } from '@flowart/shared';
 import Link from 'next/link';
-import { ArtworkGrid } from '@/components/site/ArtworkGrid';
+import { ArtworksBrowser, type BrowserStrings } from '@/components/site/ArtworksBrowser';
 import { ArtworkLabel } from '@/components/site/ArtworkLabel';
 import { ArtworkViewer } from '@/components/site/ArtworkViewer';
 import { JsonLd } from '@/components/site/JsonLd';
 import { SiteShell } from '@/components/site/SiteShell';
-import { getDict } from '@/i18n/dictionary';
-import { getArtwork, getArtworks } from '@/lib/api';
+import { getDict, type Dict } from '@/i18n/dictionary';
+import { getArtwork, getArtworks, getCategories } from '@/lib/api';
 import { SITE_NAME } from '@/lib/config';
 import { absoluteUrl, pageMetadata } from '@/lib/seo';
 import { excerpt, paragraphs } from '@/lib/text';
+
+/** The filter wording without any price words (used when no artwork has a price). */
+function withoutPrice(f: Dict['filters']): BrowserStrings['filters'] {
+  const { price, under, between, over, ...rest } = f;
+  return rest;
+}
 
 export function artworksMetadata(locale: Locale) {
   const t = getDict(locale);
@@ -18,13 +24,36 @@ export function artworksMetadata(locale: Locale) {
 
 export async function ArtworksScreen({ locale }: { locale: Locale }) {
   const t = getDict(locale);
-  const artworks = await getArtworks(locale);
+  const [artworks, categories] = await Promise.all([getArtworks(locale), getCategories(locale)]);
+  // the word "Price" is only sent to the browser when some artwork actually has a price
+  const hasPriced = artworks.some((a) => a.price_minor !== undefined);
+  const label = {
+    status: t.status,
+    artwork: {
+      medium: t.artwork.medium,
+      size: t.artwork.size,
+      year: t.artwork.year,
+      statusLabel: t.artwork.statusLabel,
+      ...(hasPriced ? { priceLabel: t.artwork.priceLabel } : {}),
+    },
+  };
   return (
     <SiteShell locale={locale} path="/artworks">
       <main className="mx-auto max-w-[88rem] px-6 pt-6 md:px-10">
         <h1 className="mb-12 text-[clamp(2.2rem,5vw,3.6rem)]">{t.artworksPage.title}</h1>
         {artworks.length > 0 ? (
-          <ArtworkGrid artworks={artworks} locale={locale} t={t} />
+          <>
+            <ArtworksBrowser
+              artworks={artworks}
+              categories={categories}
+              locale={locale}
+              t={{
+                // no priced artwork: no price words are sent to the browser at all
+                filters: hasPriced ? t.filters : withoutPrice(t.filters),
+                label,
+              }}
+            />
+          </>
         ) : (
           <p className="text-stone">{t.artworksPage.empty}</p>
         )}
@@ -69,10 +98,16 @@ export async function ArtworkScreen({ locale, slug }: { locale: Locale; slug: st
         }}
       />
       <main className="mx-auto max-w-[88rem] px-6 pt-4 md:px-10">
-        <p className="mb-6 text-[0.95rem]">
+        <p className="mb-6 flex flex-wrap gap-x-6 text-[0.95rem]">
           <Link href={localePath(locale, '/artworks')} className="link text-stone">
             {t.artworksPage.title}
           </Link>
+          {a.category ? (
+            <Link href={`${localePath(locale, '/artworks')}?category=${encodeURIComponent(a.category.slug)}`} className="link text-stone">
+              <span className="sr-only">{t.artwork.categoryLabel}: </span>
+              {a.category.name}
+            </Link>
+          ) : null}
         </p>
         <div className="grid gap-12 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:gap-20">
           <ArtworkViewer

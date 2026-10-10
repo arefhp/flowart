@@ -60,5 +60,10 @@ For a developer: dependency updates arrive via Dependabot pull requests; run `np
 
 ---
 
-## 4. Languages and legal pages
+## 4. Gallery filters: price ranges
+The gallery filter offers three price ranges in Danish kroner: under 5,000, 5,000 to 15,000, and over 15,000. They live in one small list in `apps/web/src/lib/price-bands.ts` (`PRICE_BANDS`, amounts in øre, so 500000 is 5,000 DKK). To change the ranges, edit that list, run `npm test` and `npm run build`, and deploy. A range is only shown when an artwork falls in it, and works priced in another currency are not compared with these ranges. The words ("Under {amount}", "{from} to {to}", "Over {amount}") are in `apps/web/src/i18n/dictionary.ts`. Categories and the Small/Medium/Large size are chosen by the owner in the admin and need no code change.
+
+---
+
+## 5. Languages and legal pages
 The public site is English (root) and Danish (`/da/`). Danish text in artworks, events and About is optional and falls back to English. The Danish wording, `/terms` and `/privacy` (both languages) come from [LANGUAGE_REVIEW.md](LANGUAGE_REVIEW.md). Change the wording there first, then ask Claude to update the site.

@@ -119,10 +119,16 @@ describe('About page (spec 4A)', () => {
     expect(about).not.toHaveProperty('heading');
   });
 
-  it('Danish falls back to English until Danish text exists', async () => {
+  it('Danish has its own seeded text, and falls back to English when the Danish text is cleared', async () => {
     const en = (await (await call('/api/about?lang=en')).json()) as PublicAbout;
-    const daBefore = (await (await call('/api/about?lang=da')).json()) as PublicAbout;
-    expect(daBefore.body).toBe(en.body);
+    const daSeeded = (await (await call('/api/about?lang=da')).json()) as PublicAbout;
+    expect(daSeeded.body).not.toBe(en.body);
+    expect(daSeeded.body).toContain('persisk miniaturemaleri');
+
+    await adminJson('/api/admin/about', 'PUT', { body: en.body, body_da: '' });
+    const cleared = (await (await call('/api/about?lang=da')).json()) as PublicAbout;
+    expect(cleared.body).toBe(en.body); // falls back to English
+
     await adminJson('/api/admin/about', 'PUT', { heading: 'About', heading_da: 'Om mig', body: en.body, body_da: 'Dansk tekst.' });
     const da = (await (await call('/api/about?lang=da')).json()) as PublicAbout;
     expect(da).toMatchObject({ heading: 'Om mig', body: 'Dansk tekst.' });

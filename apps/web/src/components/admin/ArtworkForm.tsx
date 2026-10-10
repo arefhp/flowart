@@ -1,8 +1,9 @@
 'use client';
 
 import { LIMITS } from '@flowart/shared';
-import { useState } from 'react';
-import { AdminApiError, adminApi, type AdminArtwork } from '@/lib/admin-api';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { AdminApiError, adminApi, type AdminArtwork, type AdminCategory } from '@/lib/admin-api';
 import { announceContentSaved } from './AdminShell';
 import { Field, Notice, charCount, useUnsavedWarning } from './ui';
 
@@ -21,6 +22,8 @@ interface FormState {
   currency: string;
   status: AdminArtwork['status'];
   featured: boolean;
+  category_id: string;
+  size_class: '' | 'small' | 'medium' | 'large';
 }
 
 const STATUS_OPTIONS: Array<{ value: AdminArtwork['status']; label: string; help: string }> = [
@@ -50,6 +53,8 @@ function initial(a: AdminArtwork | null): FormState {
     currency: a?.currency ?? 'DKK',
     status: a?.status ?? 'hidden',
     featured: a?.featured ?? false,
+    category_id: a?.category_id ?? '',
+    size_class: a?.size_class ?? '',
   };
 }
 
@@ -79,6 +84,26 @@ export function ArtworkForm({
   const [saving, setSaving] = useState(false);
   const dirty = JSON.stringify(form) !== JSON.stringify(saved);
   useUnsavedWarning(dirty);
+  const [categories, setCategories] = useState<AdminCategory[] | null>(null);
+
+  // the categories the owner has defined; a NEW artwork starts in the first one
+  useEffect(() => {
+    let current = true;
+    adminApi
+      .get<{ categories: AdminCategory[] }>('/categories')
+      .then((r) => {
+        if (!current) return;
+        setCategories(r.categories);
+        if (!artwork && r.categories[0]) {
+          setForm((f) => (f.category_id ? f : { ...f, category_id: r.categories[0]!.id }));
+          setSaved((f) => (f.category_id ? f : { ...f, category_id: r.categories[0]!.id }));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
+  }, [artwork]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -94,6 +119,8 @@ export function ArtworkForm({
     const depth = parseNumber(form.depth_cm);
     const price = parseNumber(form.price);
     if (!form.title.trim()) next.title = 'The English title is required.';
+    if (!form.category_id) next.category_id = 'Choose a category.';
+    if (!form.size_class) next.size_class = 'Choose Small, Medium or Large.';
     if (year === 'invalid' || (typeof year === 'number' && !Number.isInteger(year))) next.year = 'Enter a year such as 2025.';
     for (const [key, v] of [['width_cm', width], ['height_cm', height], ['depth_cm', depth]] as const) {
       if (v === 'invalid' || (typeof v === 'number' && v <= 0)) next[key] = 'Enter a number larger than 0, or leave it empty.';
@@ -122,6 +149,8 @@ export function ArtworkForm({
       currency: price === null ? null : form.currency,
       status: form.status,
       featured: form.featured,
+      category_id: form.category_id,
+      size_class: form.size_class,
     };
     try {
       const result = artwork
@@ -222,6 +251,48 @@ export function ArtworkForm({
         </div>
       </section>
 
+      <section aria-labelledby="where-heading" className="space-y-6">
+        <h2 id="where-heading" className="text-xl">
+          Category and size
+        </h2>
+        <p className="text-sm text-stone">Visitors can filter the gallery by both, so please choose them for every artwork.</p>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Field
+            id="category_id"
+            label="Category"
+            error={errors.category_id}
+            hint={categories && categories.length === 0 ? 'There are no categories yet. Add one first.' : undefined}
+          >
+            <select {...text('category_id')} disabled={!categories || categories.length === 0}>
+              {categories?.length ? null : <option value="">No categories</option>}
+              {categories?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field
+            id="size_class"
+            label="Size"
+            error={errors.size_class}
+            hint="Small, Medium or Large. It does not have to match the centimetres exactly: choose what feels right."
+          >
+            <select {...text('size_class')}>
+              <option value="">Choose a size</option>
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </Field>
+        </div>
+        <p className="text-sm">
+          <Link href="/admin/categories" className="link">
+            Add, rename or delete categories
+          </Link>
+        </p>
+      </section>
+
       <section aria-labelledby="status-heading" className="space-y-4">
         <h2 id="status-heading" className="text-xl">
           Visibility
@@ -243,7 +314,8 @@ export function ArtworkForm({
 
       {message ? <Notice kind={message.kind}>{message.text}</Notice> : null}
       <div className="flex items-center gap-4">
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        {/* wait for the category list, so a quick click can never submit "no category" */}
+        <button type="submit" className="btn btn-primary" disabled={saving || categories === null}>
           {saving ? 'Saving...' : artwork ? 'Save changes' : 'Create artwork'}
         </button>
         {dirty ? <span className="text-sm text-stone">Unsaved changes</span> : null}

@@ -16,18 +16,23 @@ const PORT = 8799;
 const MEDIA = 'http://media.test/m';
 
 const img = (name, w = 1200, h = 1500) => ({ url: `${MEDIA}/${name}`, alt: `Alt ${name}`, width: w, height: h });
-const NO_PRICE = { slug: 'quiet-piece', title: 'Quiet Piece', status: 'available', medium: 'Oil on canvas', cover: img('a') };
-const PRICED = { slug: 'priced-piece', title: 'Priced Piece', status: 'sold', cover: img('b'), price_minor: 1200000, currency: 'DKK' };
+const FINE = { slug: 'fine-art', name: 'Fine Art' };
+const RESIN = { slug: 'resin', name: 'Resin' };
+const NO_PRICE = { slug: 'quiet-piece', title: 'Quiet Piece', status: 'available', category: FINE, size: 'small', medium: 'Oil on canvas', cover: img('a') };
+const PRICED_BASE = { slug: 'second-piece', title: 'Second Piece', status: 'sold', category: RESIN, size: 'large', cover: img('b') };
 
-let scenario = { social: true, portrait: false };
+// priced=false: NO artwork has a price, so the page must have no price filter at all
+let scenario = { social: true, portrait: false, priced: true };
+const priced = () => (scenario.priced ? { price_minor: 1200000, currency: 'DKK' } : {});
 
 const fixtures = {
-  artworks: () => [NO_PRICE, PRICED],
+  artworks: () => [NO_PRICE, { ...PRICED_BASE, ...priced() }],
+  categories: () => [{ ...FINE, count: 1 }, { ...RESIN, count: 1 }],
   detail: (slug) =>
     slug === NO_PRICE.slug
-      ? { slug, title: NO_PRICE.title, status: 'available', description: 'First paragraph.\n\nSecond paragraph.', medium: 'Oil on canvas', images: [img('a'), img('a2')] }
-      : slug === PRICED.slug
-        ? { slug, title: PRICED.title, status: 'sold', images: [img('b')], price_minor: 1200000, currency: 'DKK' }
+      ? { slug, title: NO_PRICE.title, status: 'available', category: FINE, size: 'small', description: 'First paragraph.\n\nSecond paragraph.', medium: 'Oil on canvas', images: [img('a'), img('a2')] }
+      : slug === PRICED_BASE.slug
+        ? { slug, title: PRICED_BASE.title, status: 'sold', category: RESIN, size: 'large', images: [img('b')], ...priced() }
         : null,
   about: () => ({
     body: 'One paragraph.\n\nTwo paragraph.\nstill two.\n\nThree paragraph.\n\nFour paragraph.',
@@ -51,6 +56,7 @@ const server = http.createServer((req, res) => {
   };
   const p = url.pathname;
   if (p === '/api/artworks') return send({ artworks: fixtures.artworks() });
+  if (p === '/api/categories') return send({ categories: fixtures.categories() });
   if (p.startsWith('/api/artworks/')) {
     const d = fixtures.detail(decodeURIComponent(p.slice('/api/artworks/'.length)));
     return d ? send(d) : send({ error: { code: 'not_found', message: 'Not found' } }, 404);
@@ -109,8 +115,8 @@ const PRICE_WORDS = /\b(price|pris|dkk|currency|price_minor)\b/i;
 
 await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
 try {
-  console.log('Build 1: social links visible, no portrait');
-  scenario = { social: true, portrait: false };
+  console.log('Build 1: social links visible, no portrait, one priced artwork');
+  scenario = { social: true, portrait: false, priced: true };
   await build();
 
   for (const [lang, base] of [['en', ''], ['da', '/da']]) {
@@ -118,7 +124,7 @@ try {
     check(`[${lang}] NO-price artwork page has no price/currency markup at all`, !PRICE_WORDS.test(html), (html.match(PRICE_WORDS) ?? []).join(','));
     check(`[${lang}] NO-price page has no VAT/moms mention`, !/\b(vat|moms)\b/i.test(html));
     check(`[${lang}] no-price JSON-LD is a VisualArtwork without offers`, /"@type":"VisualArtwork"/.test(html) && !/"offers"/.test(html));
-    const priced = read(`${base}/artworks/priced-piece.html`.replace(/^\//, ''));
+    const priced = read(`${base}/artworks/second-piece.html`.replace(/^\//, ''));
     check(`[${lang}] priced artwork shows its price`, /12[.,]000/.test(priced));
     check(`[${lang}] priced artwork JSON-LD has no offers either`, !/"offers"/.test(priced));
     const grid = read(`${base}/artworks.html`.replace(/^\//, ''));
@@ -133,7 +139,23 @@ try {
   check('canonical URL is absolute and correct', /rel="canonical" href="https:\/\/zfadavi\.com\/artworks\/quiet-piece"/.test(en));
   check('hreflang alternates for en, da and x-default', ['en', 'da', 'x-default'].every((l) => new RegExp(`hrefLang="${l}"`, 'i').test(en)));
   check('artwork page lists all images as thumbnails', (en.match(/aria-label="Image \d of 2"/g) ?? []).length === 2);
-  check('"Ask about this work" shown for available, not for sold', /Ask about this work/.test(en) && !/Ask about this work/.test(read('artworks/priced-piece.html')));
+  check('"Ask about this work" shown for available, not for sold', /Ask about this work/.test(en) && !/Ask about this work/.test(read('artworks/second-piece.html')));
+
+  // ---- gallery filters (category, size, price, availability) ----
+  for (const [lang, base, words] of [
+    ['en', '', { category: 'Category', size: 'Size', price: 'Price', avail: 'Available only', small: 'Small', large: 'Large' }],
+    ['da', '/da', { category: 'Kategori', size: 'Størrelse', price: 'Pris', avail: 'Kun tilgængelige', small: 'Lille', large: 'Stor' }],
+  ]) {
+    const list = read(`${base}/artworks.html`.replace(/^\//, ''));
+    const visible = list.replace(/<script[\s\S]*?<\/script>/g, '');
+    check(`[${lang}] artworks page has the category filter with both categories`, visible.includes(words.category) && /Fine Art/.test(visible) && /Resin/.test(visible));
+    check(`[${lang}] artworks page has the size filter`, visible.includes(words.size) && visible.includes(words.small) && visible.includes(words.large));
+    check(`[${lang}] a price filter exists because an artwork has a price`, visible.includes(words.price) && /12[.,]000|5[.,]000/.test(visible) === true);
+    check(`[${lang}] availability filter exists (one artwork is sold)`, visible.includes(words.avail));
+    check(`[${lang}] filter buttons are real buttons with aria-pressed`, (visible.match(/<button type="button" aria-pressed=/g) ?? []).length >= 6);
+  }
+  check('artwork page links to its category filter', /href="\/artworks\?category=fine-art"/.test(en));
+  check('Danish artwork page links to the Danish category filter', /href="\/da\/artworks\?category=fine-art"/.test(read('da/artworks/quiet-piece.html')));
 
   const about = read('about.html');
   check('About with NO portrait has no <img> at all', !/<img /.test(about));
@@ -152,18 +174,25 @@ try {
   check('admin pages are not indexed', /name="robots" content="noindex/.test(read('admin.html')));
   check('robots.txt disallows the admin and points at the sitemap', /Disallow: \/admin/.test(read('robots.txt')) && /Sitemap: https:\/\/zfadavi\.com\/sitemap\.xml/.test(read('robots.txt')));
   const sitemap = read('sitemap.xml');
-  check('sitemap lists both languages for artworks and pages', ['/artworks/priced-piece', '/da/artworks/priced-piece', '/da/about', '/contact'].every((p) => sitemap.includes(`https://zfadavi.com${p}`)));
+  check('sitemap lists both languages for artworks and pages', ['/artworks/second-piece', '/da/artworks/second-piece', '/da/about', '/contact'].every((p) => sitemap.includes(`https://zfadavi.com${p}`)));
   check('a 404 page is generated', existsSync(join(outDir, '404.html')));
   check('static export has no server-only output (no app server folder)', !existsSync(join(outDir, 'server')));
 
   console.log('Build 2: every social link hidden, with a portrait');
-  scenario = { social: false, portrait: true };
+  scenario = { social: false, portrait: true, priced: false };
   await build();
   for (const file of ['index.html', 'about.html', 'contact.html', 'da/about.html', 'artworks.html']) {
     const html = read(file);
     const visible = html.replace(/<script[\s\S]*?<\/script>/g, '');
     check(`${file}: NO social markup when every link is hidden`, !/Follow me|Følg mig/i.test(visible) && !/instagram|tiktok|rel="me/i.test(html));
     check(`${file}: no sameAs when no links are visible`, !/sameAs/.test(html));
+  }
+  for (const [lang, file, priceWord] of [['en', 'artworks.html', 'Price'], ['da', 'da/artworks.html', 'Pris']]) {
+    const html = read(file);
+    const visible = html.replace(/<script[\s\S]*?<\/script>/g, '');
+    check(`[${lang}] NO price filter at all when no artwork has a price`, !new RegExp(`\\b${priceWord}\\b`).test(visible) && !/DKK|kr\./.test(visible));
+    check(`[${lang}] no price words anywhere in the page payload either (even for the card)`, !/price/i.test(html) && !/\bpris\b/i.test(html));
+    check(`[${lang}] category and size filters are still there`, /aria-pressed/.test(visible));
   }
   const withPortrait = read('about.html');
   check('About with a portrait renders the image with width, height and alt', /<img[^>]*width="1000"[^>]*height="1250"[^>]*alt="Alt portrait"/.test(withPortrait));

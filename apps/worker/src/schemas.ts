@@ -1,4 +1,4 @@
-import { ARTWORK_STATUSES, LIMITS, LOCALES, SOCIAL_PLATFORMS } from '@flowart/shared';
+import { ARTWORK_STATUSES, LIMITS, LOCALES, SIZE_CLASSES, SOCIAL_PLATFORMS } from '@flowart/shared';
 import { z } from 'zod';
 import { isValidEmail } from './email';
 import { HttpError } from './lib/http';
@@ -46,6 +46,9 @@ export const artworkInput = z
     year: z.number().int().min(1000).max(3000).nullish().transform((v) => (v === undefined ? null : v)),
     status: z.enum(ARTWORK_STATUSES),
     featured: z.boolean().default(false),
+    /** The owner chooses both when adding an artwork; visitors can filter by them. */
+    category_id: z.string().trim().min(1, 'Choose a category.'),
+    size_class: z.enum(SIZE_CLASSES, { error: 'Choose Small, Medium or Large.' }),
   })
   .superRefine((v, ctx) => {
     if (v.price_minor !== null && v.currency === null) {
@@ -62,6 +65,11 @@ export type ArtworkInput = z.infer<typeof artworkInput>;
 export const imageAltInput = z.object({
   alt_text: z.string().trim().max(LIMITS.altTextMax).default(''),
   alt_text_da: optText(LIMITS.altTextMax),
+});
+
+export const categoryInput = z.object({
+  name: requiredText(LIMITS.categoryNameMax, 'The English name'),
+  name_da: optText(LIMITS.categoryNameMax),
 });
 
 export const coverInput = z.object({ imageId: z.string().min(1).nullable() });

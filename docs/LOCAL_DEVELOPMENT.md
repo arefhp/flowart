@@ -33,9 +33,9 @@ This creates:
 Then create the local database and sample data:
 ```powershell
 npm run migrate:local  # creates the local SQLite database from the migrations
-npm run seed           # four sample artworks (one without a price, one sold, one hidden) and the About portrait
+npm run seed           # five sample artworks (one without a price, one sold, one hidden, one in the Resin category) and the About portrait
 ```
-The About text and the three social links are part of the database migration, so they are there as soon as `migrate:local` has run. Events arrive in Milestone 2.
+The About text (English and Danish), the three social links and the two starting categories (Fine Art, Resin) are part of the database migration, so they are there as soon as `migrate:local` has run. Events arrive in Milestone 2.
 
 Local data lives in `apps/worker/.wrangler/state` (git-ignored). To start over: stop the servers, delete that folder, and run the two commands again. `npm run seed` is safe to run twice: it skips what already exists.
 

@@ -3,6 +3,12 @@ import { formatPrice, intlLocale, type Dict } from '@/i18n/dictionary';
 import { formatDimensions } from '@/lib/text';
 import type { ArtworkDetail, ArtworkListItem } from '@/lib/types';
 
+/** The strings the label needs, so a client page can receive just these and not the whole dictionary. */
+export type LabelStrings = {
+  status: Dict['status'];
+  artwork: Pick<Dict['artwork'], 'medium' | 'size' | 'year' | 'statusLabel'> & { priceLabel?: string };
+};
+
 type Labelled = Pick<ArtworkListItem, 'title' | 'status' | 'medium' | 'price_minor' | 'currency'> &
   Partial<Pick<ArtworkDetail, 'year' | 'dimensions'>>;
 
@@ -18,7 +24,7 @@ export function ArtworkLabel({
 }: {
   artwork: Labelled;
   locale: Locale;
-  t: Dict;
+  t: LabelStrings;
   headingLevel?: 'h1' | 'h2' | 'p';
 }) {
   const size = formatDimensions(intlLocale[locale], artwork.dimensions);
@@ -52,7 +58,7 @@ export function ArtworkLabel({
         </div>
         {hasPrice ? (
           <div>
-            <dt className="sr-only">{t.artwork.priceLabel}</dt>
+            <dt className="sr-only">{t.artwork.priceLabel ?? ''}</dt>
             <dd>{formatPrice(locale, artwork.price_minor!, artwork.currency!)}</dd>
           </div>
         ) : null}

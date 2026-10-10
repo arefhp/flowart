@@ -11,10 +11,23 @@ export interface PublicImage {
 
 export type ArtworkStatus = 'available' | 'reserved' | 'sold';
 
+export interface CategoryRef {
+  slug: string;
+  name: string;
+}
+
+export type SizeClass = 'small' | 'medium' | 'large';
+
+export interface PublicCategory extends CategoryRef {
+  count: number;
+}
+
 export interface ArtworkListItem {
   slug: string;
   title: string;
   status: ArtworkStatus;
+  category?: CategoryRef;
+  size?: SizeClass;
   medium?: string;
   cover: PublicImage;
   price_minor?: number;
@@ -25,6 +38,8 @@ export interface ArtworkDetail {
   slug: string;
   title: string;
   status: ArtworkStatus;
+  category?: CategoryRef;
+  size?: SizeClass;
   description?: string;
   medium?: string;
   year?: number;

@@ -62,7 +62,20 @@ Tone: warm and personal, like an artist's studio. Informal "du" in Danish.
 | Contact form | Send message | Send besked |
 | Contact success | Thank you, your message has been sent. | Tak, din besked er sendt. |
 | Contact error | Something went wrong. Please try again or write to info@zfadavi.com. | Noget gik galt. Prøv igen, eller skriv til info@zfadavi.com. |
+| Home / footer tagline | Fine Art and workshops in Copenhagen | Fine Art og workshops i København |
 | Footer | Follow me | Følg mig |
+| Gallery filters | Filter the artworks | Filtrér værkerne |
+| Gallery filters | Category / Size / Price / Availability | Kategori / Størrelse / Pris / Tilgængelighed |
+| Gallery filters | All | Alle |
+| Gallery filters | Small / Medium / Large | Lille / Mellemstor / Stor |
+| Gallery filters | Under {amount} | Under {amount} |
+| Gallery filters | {from} to {to} | {from} til {to} |
+| Gallery filters | Over {amount} | Over {amount} |
+| Gallery filters | Available only | Kun tilgængelige |
+| Gallery filters | Clear filters | Ryd filtre |
+| Gallery filters | Showing {shown} of {total} | Viser {shown} af {total} |
+| Gallery filters | No artworks match these filters. | Ingen værker passer til disse filtre. |
+| Artwork page | Category | Kategori |
 | Footer | Privacy policy | Privatlivspolitik |
 | Footer | Terms | Vilkår |
 
@@ -149,3 +162,19 @@ Vi bruger ikke reklame- eller analysecookies.
 **Dine rettigheder.** Du kan bede os om at vise, rette eller slette dine oplysninger eller begrænse, hvordan vi bruger dem. Skriv blot til info@zfadavi.com. Du kan også kontakte Datatilsynet.
 
 **Sociale medier.** Linkene til Instagram, Facebook og TikTok er almindelige links. De indlæser ikke noget fra tjenesterne på vores hjemmeside.
+
+---
+
+# Part D. About statement in Danish (starting text)
+
+This is the Danish version that visitors see on `/da/about` from the start. It is a translation of your English statement (including the first sentence, which is a fragment in your draft). Please read it and reword anything that does not sound like you. You can edit it any time in `Admin -> About`; the database text starts from this version.
+
+**Dansk**
+
+Min tilgang til visuel fortælling gennem farve, tekstur og form. Mit arbejde udforsker følelser, atmosfære og den stille balance mellem bevægelse og stilhed.
+
+Jeg arbejder primært med oliemaling og skaber udtryksfulde, intuitive kompositioner, der inviterer til refleksion og personlig fortolkning. Gennem lagdelte teksturer, harmoniske farver og flydende former søger jeg at formidle følelser, som ofte er svære at udtrykke med ord.
+
+Mit nuværende arbejde er inspireret af den sarte skønhed i persisk miniaturemaleri, hvor hver detalje er bevidst, og meningen findes i det subtile. I stedet for at fortælle en fastlagt historie skaber jeg rum, hvor beskueren kan holde pause, finde forbindelse og opdage sine egne fortolkninger.
+
+Min skabende proces begynder med en iagttagelse eller en enkel idé og udvikler sig gennem intuitiv skitsering, lagdeling og eksperimenter. For mig er maleri en rejse af udforskning, ledet af klarhed, formål og sjæl.

@@ -100,6 +100,9 @@ type SeedArtwork = {
   year: number | null;
   status: ArtworkRow['status'];
   featured: boolean;
+  /** slug of a category created by migration 0003 */
+  category: 'fine-art' | 'resin';
+  size_class: 'small' | 'medium' | 'large';
   images: Array<{ source: number; alt: string; alt_da: string | null }>;
   cover?: number;
 };
@@ -122,6 +125,8 @@ const SEED: SeedArtwork[] = [
     year: 2025,
     status: 'available',
     featured: true,
+    category: 'fine-art',
+    size_class: 'medium',
     images: [
       { source: 0, alt: 'Quiet Garden, full view', alt_da: 'Den stille have, hele værket' },
       { source: 1, alt: 'Quiet Garden, detail of the brushwork', alt_da: 'Den stille have, penselstrøg i detaljen' },
@@ -143,6 +148,8 @@ const SEED: SeedArtwork[] = [
     year: 2025,
     status: 'available',
     featured: false,
+    category: 'fine-art',
+    size_class: 'medium',
     images: [
       { source: 1, alt: 'Evening Reverie, full view', alt_da: null },
       { source: 2, alt: 'Evening Reverie, in daylight', alt_da: null },
@@ -165,6 +172,8 @@ const SEED: SeedArtwork[] = [
     year: 2024,
     status: 'sold',
     featured: false,
+    category: 'fine-art',
+    size_class: 'small',
     images: [{ source: 2, alt: 'Morning Light', alt_da: null }],
   },
   {
@@ -182,7 +191,28 @@ const SEED: SeedArtwork[] = [
     year: null,
     status: 'hidden',
     featured: false,
+    category: 'fine-art',
+    size_class: 'large',
     images: [{ source: 3, alt: 'A draft painting', alt_da: null }],
+  },
+  {
+    title: 'Resin Tide',
+    title_da: 'Harpiksbølge',
+    description: 'Layers of poured resin and pigment, set to catch the light as you move around it.',
+    description_da: null,
+    price_minor: 450_000,
+    currency: 'DKK',
+    width_cm: 30,
+    height_cm: 30,
+    depth_cm: 3,
+    medium: 'Resin and pigment on panel',
+    medium_da: 'Harpiks og pigment på plade',
+    year: 2026,
+    status: 'available',
+    featured: false,
+    category: 'resin',
+    size_class: 'small',
+    images: [{ source: 3, alt: 'Resin Tide, full view', alt_da: null }],
   },
 ];
 
@@ -199,8 +229,10 @@ async function main() {
         console.log(`  = "${spec.title}" already exists, skipped`);
         continue;
       }
-      const { images, cover, ...fields } = spec;
-      const art = await createArtwork(env, fields);
+      const { images, cover, category, ...fields } = spec;
+      const cat = await env.DB.prepare('SELECT id FROM categories WHERE slug = ?1').bind(category).first<{ id: string }>();
+      if (!cat) throw new Error(`Category "${category}" is missing: run npm run migrate:local first.`);
+      const art = await createArtwork(env, { ...fields, category_id: cat.id });
       const ids: string[] = [];
       for (const img of images) {
         const upload = await makeUpload(paintings[img.source % paintings.length]!);

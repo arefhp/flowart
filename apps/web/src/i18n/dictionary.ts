@@ -7,7 +7,7 @@ import type { Locale } from '@flowart/shared';
  */
 export const en = {
   siteName: 'Zakereh Art',
-  tagline: 'Oil paintings and art workshops in Copenhagen.',
+  tagline: 'Fine Art and workshops in Copenhagen',
   skipToContent: 'Skip to content',
   nav: {
     label: 'Main menu',
@@ -24,6 +24,7 @@ export const en = {
     size: 'Size',
     statusLabel: 'Status',
     priceLabel: 'Price',
+    categoryLabel: 'Category',
     ask: 'Ask about this work',
     enquiryMessage: 'I am interested in the artwork "{title}".',
     imagesLabel: 'Images of {title}',
@@ -41,6 +42,24 @@ export const en = {
   artworksPage: {
     title: 'Artworks',
     empty: 'There are no artworks to show yet.',
+  },
+  filters: {
+    label: 'Filter the artworks',
+    category: 'Category',
+    size: 'Size',
+    price: 'Price',
+    availability: 'Availability',
+    all: 'All',
+    small: 'Small',
+    medium: 'Medium',
+    large: 'Large',
+    under: 'Under {amount}',
+    between: '{from} to {to}',
+    over: 'Over {amount}',
+    availableOnly: 'Available only',
+    clear: 'Clear filters',
+    showing: 'Showing {shown} of {total}',
+    none: 'No artworks match these filters.',
   },
   about: { title: 'About' },
   contact: {
@@ -70,7 +89,7 @@ export const en = {
     back: 'Go to the home page',
   },
   meta: {
-    homeTitle: 'Zakereh Art, oil paintings in Copenhagen',
+    homeTitle: 'Zakereh Art, Fine Art in Copenhagen',
     artworksTitle: 'Artworks',
     aboutTitle: 'About',
     contactTitle: 'Contact',
@@ -83,7 +102,7 @@ export type Dict = typeof en;
 
 export const da: Dict = {
   siteName: 'Zakereh Art',
-  tagline: 'Oliemalerier og kunstworkshops i København.',
+  tagline: 'Fine Art og workshops i København',
   skipToContent: 'Gå til indhold',
   nav: {
     label: 'Hovedmenu',
@@ -100,6 +119,7 @@ export const da: Dict = {
     size: 'Størrelse',
     statusLabel: 'Status',
     priceLabel: 'Pris',
+    categoryLabel: 'Kategori',
     ask: 'Spørg til værket',
     enquiryMessage: 'Jeg er interesseret i værket "{title}".',
     imagesLabel: 'Billeder af {title}',
@@ -117,6 +137,24 @@ export const da: Dict = {
   artworksPage: {
     title: 'Kunstværker',
     empty: 'Der er ingen værker at vise endnu.',
+  },
+  filters: {
+    label: 'Filtrér værkerne',
+    category: 'Kategori',
+    size: 'Størrelse',
+    price: 'Pris',
+    availability: 'Tilgængelighed',
+    all: 'Alle',
+    small: 'Lille',
+    medium: 'Mellemstor',
+    large: 'Stor',
+    under: 'Under {amount}',
+    between: '{from} til {to}',
+    over: 'Over {amount}',
+    availableOnly: 'Kun tilgængelige',
+    clear: 'Ryd filtre',
+    showing: 'Viser {shown} af {total}',
+    none: 'Ingen værker passer til disse filtre.',
   },
   about: { title: 'Om mig' },
   contact: {
@@ -146,7 +184,7 @@ export const da: Dict = {
     back: 'Gå til forsiden',
   },
   meta: {
-    homeTitle: 'Zakereh Art, oliemalerier i København',
+    homeTitle: 'Zakereh Art, Fine Art i København',
     artworksTitle: 'Kunstværker',
     aboutTitle: 'Om mig',
     contactTitle: 'Kontakt',

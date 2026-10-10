@@ -59,7 +59,7 @@ describe('public artworks', () => {
     await insertArtwork({ title: 'Card', description: 'Long text', medium: 'Oil' }, 3);
     const list = (await (await call('/api/artworks')).json()) as ListResponse;
     const item = list.artworks[0]!;
-    expect(Object.keys(item).sort()).toEqual(['cover', 'medium', 'slug', 'status', 'title']);
+    expect(Object.keys(item).sort()).toEqual(['category', 'cover', 'medium', 'size', 'slug', 'status', 'title']);
     expect(Object.keys(item.cover as object).sort()).toEqual(['alt', 'height', 'url', 'width']);
   });
 

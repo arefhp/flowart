@@ -10,6 +10,7 @@ import { ArtworkForm } from './ArtworkForm';
 import { ImageManager } from './ImageManager';
 import { Notice, PageTitle } from './ui';
 
+const SIZE_LABEL = { small: 'Small', medium: 'Medium', large: 'Large' } as const;
 const STATUS_LABEL = { available: 'Available', reserved: 'Reserved', sold: 'Sold', hidden: 'Hidden' } as const;
 
 function priceText(minor: number | null, currency: string | null) {
@@ -46,12 +47,18 @@ export function ArtworksAdmin() {
       ) : null}
       {rows && rows.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[40rem] border-collapse text-left">
+          <table className="w-full min-w-[48rem] border-collapse text-left">
             <caption className="sr-only">All artworks</caption>
             <thead className="border-b border-ink text-sm">
               <tr>
                 <th scope="col" className="py-2 pr-4 font-medium">
                   Artwork
+                </th>
+                <th scope="col" className="py-2 pr-4 font-medium">
+                  Category
+                </th>
+                <th scope="col" className="py-2 pr-4 font-medium">
+                  Size
                 </th>
                 <th scope="col" className="py-2 pr-4 font-medium">
                   Status
@@ -81,6 +88,8 @@ export function ArtworksAdmin() {
                       </span>
                     </Link>
                   </td>
+                  <td className="py-3 pr-4">{a.category_name ?? 'None'}</td>
+                  <td className="py-3 pr-4">{a.size_class ? SIZE_LABEL[a.size_class] : 'Not set'}</td>
                   <td className="py-3 pr-4">{STATUS_LABEL[a.status]}</td>
                   <td className="py-3 pr-4">{priceText(a.price_minor, a.currency)}</td>
                   <td className="py-3 pr-4">

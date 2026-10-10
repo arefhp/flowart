@@ -6,10 +6,12 @@ import {
   slugify,
   type ArtworkStatus,
   type Locale,
+  type SizeClass,
 } from '@flowart/shared';
 import type { Env } from '../env';
 import { HttpError, notFound, nowIso, uuid } from '../lib/http';
 import type { ArtworkInput } from '../schemas';
+import { categoryExists } from './categories';
 import { deleteVariants, putVariants, type ValidatedUpload } from './images';
 
 export interface ArtworkRow {
@@ -30,9 +32,21 @@ export interface ArtworkRow {
   status: ArtworkStatus;
   featured: number;
   cover_image_id: string | null;
+  category_id: string | null;
+  size_class: SizeClass | null;
   created_at: string;
   updated_at: string;
 }
+
+/** An artwork row joined with its category (for public and admin lists). */
+interface ArtworkWithCategory extends ArtworkRow {
+  category_slug: string | null;
+  category_name: string | null;
+  category_name_da: string | null;
+}
+
+const WITH_CATEGORY = `SELECT a.*, c.slug AS category_slug, c.name AS category_name, c.name_da AS category_name_da
+  FROM artworks a LEFT JOIN categories c ON c.id = a.category_id`;
 
 export interface ImageRow {
   id: string;
@@ -67,10 +81,17 @@ export interface PublicImage {
   height: number;
 }
 
+export interface PublicCategoryRef {
+  slug: string;
+  name: string;
+}
+
 export interface PublicArtworkListItem {
   slug: string;
   title: string;
   status: ArtworkStatus;
+  category?: PublicCategoryRef;
+  size?: SizeClass;
   medium?: string;
   cover: PublicImage;
   price_minor?: number;
@@ -81,6 +102,8 @@ export interface PublicArtworkDetail {
   slug: string;
   title: string;
   status: ArtworkStatus;
+  category?: PublicCategoryRef;
+  size?: SizeClass;
   description?: string;
   medium?: string;
   year?: number;
@@ -98,6 +121,15 @@ function publicImage(env: Env, lang: Locale, row: ArtworkRow, img: ImageRow): Pu
     alt: alt || (pickText(lang, row.title, row.title_da) as string),
     width: img.width,
     height: img.height,
+  };
+}
+
+function categoryAndSize(row: ArtworkWithCategory, lang: Locale): { category?: PublicCategoryRef; size?: SizeClass } {
+  return {
+    ...(row.category_slug && row.category_name
+      ? { category: { slug: row.category_slug, name: pickText(lang, row.category_name, row.category_name_da) as string } }
+      : {}),
+    ...(row.size_class ? { size: row.size_class } : {}),
   };
 }
 
@@ -131,9 +163,9 @@ export async function listPublicArtworks(
   opts: { featured?: boolean } = {},
 ): Promise<PublicArtworkListItem[]> {
   const rows = await env.DB.prepare(
-    `SELECT * FROM artworks WHERE status IN (${PUBLIC_STATUS_SQL}) ${opts.featured ? 'AND featured = 1' : ''}
-     ORDER BY created_at DESC, id`,
-  ).all<ArtworkRow>();
+    `${WITH_CATEGORY} WHERE a.status IN (${PUBLIC_STATUS_SQL}) ${opts.featured ? 'AND a.featured = 1' : ''}
+     ORDER BY a.created_at DESC, a.id`,
+  ).all<ArtworkWithCategory>();
   const images = await imagesFor(
     env,
     rows.results.map((r) => r.id),
@@ -149,6 +181,7 @@ export async function listPublicArtworks(
       slug: row.slug,
       title: pickText(lang, row.title, row.title_da) as string,
       status: row.status,
+      ...categoryAndSize(row, lang),
       ...(medium ? { medium } : {}),
       cover: publicImage(env, lang, row, cover),
     };
@@ -158,9 +191,9 @@ export async function listPublicArtworks(
 }
 
 export async function getPublicArtwork(env: Env, slug: string, lang: Locale): Promise<PublicArtworkDetail> {
-  const row = await env.DB.prepare(`SELECT * FROM artworks WHERE slug = ?1 AND status IN (${PUBLIC_STATUS_SQL})`)
+  const row = await env.DB.prepare(`${WITH_CATEGORY} WHERE a.slug = ?1 AND a.status IN (${PUBLIC_STATUS_SQL})`)
     .bind(slug)
-    .first<ArtworkRow>();
+    .first<ArtworkWithCategory>();
   if (!row) throw notFound('Artwork not found');
   const imgs = (await imagesFor(env, [row.id])).get(row.id) ?? [];
   const cover = pickCover(row, imgs);
@@ -179,6 +212,7 @@ export async function getPublicArtwork(env: Env, slug: string, lang: Locale): Pr
     slug: row.slug,
     title: pickText(lang, row.title, row.title_da) as string,
     status: row.status,
+    ...categoryAndSize(row, lang),
     ...(description ? { description } : {}),
     ...(medium ? { medium } : {}),
     ...(row.year !== null ? { year: row.year } : {}),
@@ -213,7 +247,7 @@ export interface AdminImage {
   is_cover: boolean;
 }
 
-export function adminArtworkDto(env: Env, row: ArtworkRow, images: ImageRow[]) {
+export function adminArtworkDto(env: Env, row: ArtworkWithCategory, images: ImageRow[]) {
   const cover = pickCover(row, images);
   return {
     id: row.id,
@@ -232,6 +266,9 @@ export function adminArtworkDto(env: Env, row: ArtworkRow, images: ImageRow[]) {
     year: row.year,
     status: row.status,
     featured: row.featured === 1,
+    category_id: row.category_id,
+    category_name: row.category_name,
+    size_class: row.size_class,
     cover_image_id: cover?.id ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -249,7 +286,7 @@ export function adminArtworkDto(env: Env, row: ArtworkRow, images: ImageRow[]) {
 }
 
 export async function listAdminArtworks(env: Env) {
-  const rows = await env.DB.prepare('SELECT * FROM artworks ORDER BY created_at DESC, id').all<ArtworkRow>();
+  const rows = await env.DB.prepare(`${WITH_CATEGORY} ORDER BY a.created_at DESC, a.id`).all<ArtworkWithCategory>();
   const images = await imagesFor(
     env,
     rows.results.map((r) => r.id),
@@ -263,6 +300,8 @@ export async function listAdminArtworks(env: Env) {
       title: row.title,
       status: row.status,
       featured: row.featured === 1,
+      category_name: row.category_name,
+      size_class: row.size_class,
       price_minor: row.price_minor,
       currency: row.currency,
       image_count: imgs.length,
@@ -274,8 +313,8 @@ export async function listAdminArtworks(env: Env) {
   });
 }
 
-async function getRow(env: Env, id: string): Promise<ArtworkRow> {
-  const row = await env.DB.prepare('SELECT * FROM artworks WHERE id = ?1').bind(id).first<ArtworkRow>();
+async function getRow(env: Env, id: string): Promise<ArtworkWithCategory> {
+  const row = await env.DB.prepare(`${WITH_CATEGORY} WHERE a.id = ?1`).bind(id).first<ArtworkWithCategory>();
   if (!row) throw notFound('Artwork not found');
   return row;
 }
@@ -296,14 +335,23 @@ async function uniqueSlug(env: Env, title: string): Promise<string> {
   return `${base}-${uuid().slice(0, 8)}`;
 }
 
+async function assertCategory(env: Env, categoryId: string): Promise<void> {
+  if (!(await categoryExists(env, categoryId))) {
+    throw new HttpError(400, 'validation_error', 'Choose a category from the list.', {
+      fields: { category_id: 'Choose a category from the list.' },
+    });
+  }
+}
+
 export async function createArtwork(env: Env, input: ArtworkInput) {
+  await assertCategory(env, input.category_id);
   const id = uuid();
   const now = nowIso();
   const slug = await uniqueSlug(env, input.title);
   await env.DB.prepare(
     `INSERT INTO artworks (id, title, title_da, slug, description, description_da, price_minor, currency,
-       width_cm, height_cm, depth_cm, medium, medium_da, year, status, featured, created_at, updated_at)
-     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?17)`,
+       width_cm, height_cm, depth_cm, medium, medium_da, year, status, featured, category_id, size_class, created_at, updated_at)
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)`,
   )
     .bind(
       id,
@@ -322,6 +370,8 @@ export async function createArtwork(env: Env, input: ArtworkInput) {
       input.year,
       input.status,
       input.featured ? 1 : 0,
+      input.category_id,
+      input.size_class,
       now,
     )
     .run();
@@ -330,9 +380,11 @@ export async function createArtwork(env: Env, input: ArtworkInput) {
 
 export async function updateArtwork(env: Env, id: string, input: ArtworkInput) {
   await getRow(env, id);
+  await assertCategory(env, input.category_id);
   await env.DB.prepare(
     `UPDATE artworks SET title=?2, title_da=?3, description=?4, description_da=?5, price_minor=?6, currency=?7,
-       width_cm=?8, height_cm=?9, depth_cm=?10, medium=?11, medium_da=?12, year=?13, status=?14, featured=?15
+       width_cm=?8, height_cm=?9, depth_cm=?10, medium=?11, medium_da=?12, year=?13, status=?14, featured=?15,
+       category_id=?16, size_class=?17
      WHERE id=?1`,
   )
     .bind(
@@ -351,6 +403,8 @@ export async function updateArtwork(env: Env, id: string, input: ArtworkInput) {
       input.year,
       input.status,
       input.featured ? 1 : 0,
+      input.category_id,
+      input.size_class,
     )
     .run();
   return getAdminArtwork(env, id);

@@ -69,7 +69,7 @@ Public contact details of the business. Claude uses them on `/contact`, `/privac
 | Other social/links (optional) | | add later in `/admin/social` | [ ] |
 | Cancellation / refund policy text | A customer who cancels by email to info@zfadavi.com at least 24 hours before the workshop starts gets a full refund (the admin refunds that booking). If the artist cancels, everyone is fully refunded. Later than 24 hours: not refundable under the policy, at the artist's discretion (**confirmed by the owner**). | owner decision; Claude writes `/terms` in English and Danish from this | [x] |
 | Default workshop location (optional) | | pre-fills the event form | [ ] |
-| Site tagline / short description (optional, for SEO) | | leave blank and Claude drafts English + Danish for you to approve | [ ] |
+| Site tagline / short description (optional, for SEO) | **Fine Art and workshops in Copenhagen** (Danish, drafted: "Fine Art og workshops i København") | shown under the site name, in the footer and in search results; please confirm the Danish | [x] |
 | Home-page hero artwork (optional) | pick the featured one | the title of the artwork to feature, or "pick the featured one" | [x] |
 
 Files to give Claude: put them in the repo's `input/` folder (do not paste them in chat). **Provided:** `about.jpeg` (About portrait) and four painting photos (`Painting 3 croped.JPG`, `Pinting 2.jpg`, `painting 4 1.jpg`, `painting original 1.jpg`). Still optional: a logo. `input/` is git-ignored (your originals are never committed); the seed script uses these files locally and falls back to generated placeholders when they are absent. Keep your own copies.
@@ -91,6 +91,10 @@ Files to give Claude: put them in the repo's `input/` folder (do not paste them 
 | Visual direction | Quiet, light gallery | decided |
 | Artwork enquiries | "Ask about this work" button opens the contact form pre-filled (not shown for sold works) | decided |
 | Gallery | The grid shows one cover image per artwork; clicking opens the artwork page with all its images and the full description | decided |
+| Categories | Defined by you in the admin (start: Fine Art, Resin). One category per artwork; a category with artworks cannot be deleted | decided |
+| Size | Small / Medium / Large, chosen by you for every artwork | decided |
+| Gallery filters | Category, Size, Price range, Available only. The Price filter only appears when an artwork has a price. Ranges: under 5,000, 5,000 to 15,000, over 15,000 DKK | decided |
+| About text in Danish | Starts as a translation of your English text; reword it in `/admin/about` | decided |
 | Workers Free 10 ms CPU limit | Accepted for launch; how to raise it is in `docs/MAINTENANCE.md` | decided |
 
 ---

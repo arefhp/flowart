@@ -58,6 +58,7 @@ export function AdminHome() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {[
             ['/admin/artworks', 'Artworks', 'Add, edit and organise the gallery.'],
+            ['/admin/categories', 'Categories', 'Fine Art, Resin and any others you add.'],
             ['/admin/about', 'About', 'Your statement and portrait, in English and Danish.'],
             ['/admin/social', 'Social links', 'Instagram, Facebook, TikTok and more.'],
             ['/admin/messages', 'Messages', 'What visitors wrote to you.'],

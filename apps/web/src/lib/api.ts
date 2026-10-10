@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import type { AboutContent, ArtworkDetail, ArtworkListItem, Locale, SocialLink } from './types';
+import type { AboutContent, ArtworkDetail, ArtworkListItem, Locale, PublicCategory, SocialLink } from './types';
 
 /**
  * Build-time data access (spec section 1.2). The static site is generated from the public API.
@@ -41,6 +41,10 @@ export async function getArtworks(lang: Locale, opts: { featured?: boolean } = {
   const q = new URLSearchParams({ lang });
   if (opts.featured) q.set('featured', '1');
   return (await get<{ artworks: ArtworkListItem[] }>(`/api/artworks?${q}`, { artworks: [] })).artworks;
+}
+
+export async function getCategories(lang: Locale): Promise<PublicCategory[]> {
+  return (await get<{ categories: PublicCategory[] }>(`/api/categories?lang=${lang}`, { categories: [] })).categories;
 }
 
 export async function getArtwork(slug: string, lang: Locale): Promise<ArtworkDetail> {

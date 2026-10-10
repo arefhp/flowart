@@ -1,54 +1,14 @@
-import { expect, test, type Page } from '@playwright/test';
-import sharp from 'sharp';
+import { expect, test } from '@playwright/test';
+import { addImages, createArtwork, deleteArtwork, photo, stamp } from './helpers';
 
 // Admin flows in the real browser against the local stack (the admin login is bypassed locally).
 // Every test cleans up what it creates.
-
-async function photo(width = 1200, height = 1500, color = '#3a6ea5'): Promise<Buffer> {
-  return sharp({ create: { width, height, channels: 3, background: color } }).png().toBuffer();
-}
-
-const stamp = () => `${Date.now().toString(36)}`;
-
-async function createArtwork(page: Page, title: string, opts: { titleDa?: string; status?: string } = {}) {
-  await page.goto('/admin/artworks/new');
-  await page.getByLabel('Title (English)').fill(title);
-  if (opts.titleDa) await page.getByLabel('Title (Danish, optional)').fill(opts.titleDa);
-  await page.getByLabel('Status', { exact: true }).selectOption(opts.status ?? 'available');
-  await page.getByRole('button', { name: 'Create artwork' }).click();
-  await expect(page).toHaveURL(/\/admin\/artworks\/edit\?id=.+&created=1/);
-  const id = new URL(page.url()).searchParams.get('id')!;
-  return id;
-}
-
-async function addImages(page: Page, count: number) {
-  const files = await Promise.all(
-    Array.from({ length: count }, async (_, i) => ({
-      name: `photo-${i + 1}.png`,
-      mimeType: 'image/png',
-      buffer: await photo(1200 + i * 100, 1500, ['#3a6ea5', '#a5563a', '#4a8a5a'][i % 3]),
-    })),
-  );
-  await page.locator('input[type=file]').setInputFiles(files);
-  const alts = page.getByPlaceholder('Describe the painting in one sentence');
-  await expect(alts).toHaveCount(count);
-  for (let i = 0; i < count; i++) await alts.nth(i).fill(`Photo number ${i + 1}`);
-  await page.getByRole('button', { name: new RegExp(`^Add ${count} image`) }).click();
-  await expect(page.getByText(new RegExp(`${count} images? added`))).toBeVisible({ timeout: 30_000 });
-}
-
-async function deleteArtwork(page: Page, id: string) {
-  page.once('dialog', (d) => void d.accept());
-  await page.goto(`/admin/artworks/edit?id=${id}`);
-  await page.getByRole('button', { name: 'Delete artwork' }).click();
-  await expect(page).toHaveURL(/\/admin\/artworks$/);
-}
 
 test('the admin shows the local development banner and its navigation', async ({ page }) => {
   await page.goto('/admin');
   await expect(page.getByText('Local development mode')).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Admin' });
-  for (const name of ['Overview', 'Artworks', 'About', 'Social links', 'Messages', 'Help']) {
+  for (const name of ['Overview', 'Artworks', 'Categories', 'About', 'Social links', 'Messages', 'Help']) {
     await expect(nav.getByRole('link', { name })).toBeVisible();
   }
   await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible();
@@ -109,6 +69,7 @@ test('the admin form checks numbers and keeps Danish optional', async ({ page })
   await page.getByRole('button', { name: 'Create artwork' }).click();
   await expect(page.getByText('The English title is required.')).toBeVisible();
   await page.getByLabel('Title (English)').fill('Invalid numbers');
+  await page.getByLabel('Size', { exact: true }).selectOption('small');
   await page.getByLabel('Width (cm)').fill('-3');
   await page.getByLabel('Price (optional)').fill('abc');
   await page.getByRole('button', { name: 'Create artwork' }).click();
@@ -206,6 +167,8 @@ test('social links: preview the cleaned link, reject a bad one, hide one and see
 test('About: Danish text shows on the Danish page and falls back to English when removed', async ({ page }) => {
   await page.goto('/admin/about');
   const danish = page.getByLabel('Text (Danish, optional)', { exact: true });
+  const originalDanish = await danish.inputValue(); // the seeded Danish statement; restored at the end
+  expect(originalDanish).toContain('persisk miniaturemaleri');
   await danish.fill('Dette er den danske tekst fra e2e-testen.');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('Saved. The public site updates in a few minutes.')).toBeVisible();
@@ -219,6 +182,14 @@ test('About: Danish text shows on the Danish page and falls back to English when
   await expect(page.getByText('Saved. The public site updates in a few minutes.')).toBeVisible();
   await page.goto('/da/about');
   await expect(page.getByText('Persian miniature painting')).toBeVisible(); // English fallback
+
+  // put the Danish statement back
+  await page.goto('/admin/about');
+  await page.getByLabel('Text (Danish, optional)', { exact: true }).fill(originalDanish);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Saved. The public site updates in a few minutes.')).toBeVisible();
+  await page.goto('/da/about');
+  await expect(page.getByText('persisk miniaturemaleri')).toBeVisible();
 });
 
 test('the portrait needs alt text and the preview shows the page crop', async ({ page }) => {

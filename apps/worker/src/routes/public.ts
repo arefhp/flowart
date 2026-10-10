@@ -10,6 +10,7 @@ import { getCtx } from '../middleware';
 import { contactInput, parse, readJson } from '../schemas';
 import { findPublicArtworkBySlug, getPublicArtwork, listPublicArtworks } from '../services/artworks';
 import { getPublicAbout } from '../services/about';
+import { listPublicCategories } from '../services/categories';
 import { getPublicSocial } from '../services/social';
 
 export const publicRoutes = new Hono<AppBindings>();
@@ -26,6 +27,12 @@ publicRoutes.get('/health/ready', async (c) => {
 publicRoutes.get('/site-version', async (c) => {
   const contentUpdatedAt = await getState(c.env, 'content_updated_at');
   return c.json({ contentUpdatedAt }, 200, { 'Cache-Control': 'no-store' });
+});
+
+/** Categories visitors can filter by (only ones with at least one shown artwork). */
+publicRoutes.get('/categories', async (c) => {
+  const lang = parseLocale(c.req.query('lang'));
+  return c.json({ categories: await listPublicCategories(c.env, lang) }, 200, { 'Cache-Control': PUBLIC_CACHE });
 });
 
 publicRoutes.get('/artworks', async (c) => {

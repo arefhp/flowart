@@ -8,6 +8,7 @@ import { AdminApiError, SESSION_ENDED_EVENT, adminApi, type RebuildStatus } from
 const NAV = [
   { href: '/admin', label: 'Overview', exact: true },
   { href: '/admin/artworks', label: 'Artworks' },
+  { href: '/admin/categories', label: 'Categories' },
   { href: '/admin/about', label: 'About' },
   { href: '/admin/social', label: 'Social links' },
   { href: '/admin/messages', label: 'Messages' },

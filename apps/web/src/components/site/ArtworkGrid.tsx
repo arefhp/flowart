@@ -1,15 +1,14 @@
 import { localePath, type Locale } from '@flowart/shared';
 import Link from 'next/link';
-import type { Dict } from '@/i18n/dictionary';
 import type { ArtworkListItem } from '@/lib/types';
-import { ArtworkLabel } from './ArtworkLabel';
+import { ArtworkLabel, type LabelStrings } from './ArtworkLabel';
 import { Picture } from './Picture';
 
 /**
  * The gallery wall: ONE cover image per artwork, shown in its true proportions (no identical
  * cards), with the wall label beneath. Clicking opens the artwork page with every image.
  */
-export function ArtworkGrid({ artworks, locale, t }: { artworks: ArtworkListItem[]; locale: Locale; t: Dict }) {
+export function ArtworkGrid({ artworks, locale, t }: { artworks: ArtworkListItem[]; locale: Locale; t: LabelStrings }) {
   return (
     <ul className="columns-1 gap-x-12 sm:columns-2 xl:columns-3">
       {artworks.map((a, index) => (
