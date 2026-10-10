@@ -20,6 +20,7 @@
     "migrate:prod": "npm run migrate:prod -w apps/worker",
     "seed": "npm run seed -w apps/worker",
     "check-env": "node scripts/check-env.mjs",
+    "smoke": "node scripts/smoke.mjs",
     "test": "npm run test -w packages/shared && npm run test -w apps/worker && npm run test -w apps/web",
     "test:built-html": "npm run test:built-html -w apps/web",
     "test:e2e": "npm run test:e2e -w apps/web",

@@ -35,9 +35,13 @@
     "crons": ["*/15 * * * *", "17 3 * * *"]
   },
 
+  // zfadavi.com must be a zone in this Cloudflare account (runbook Step 0A). Once the domain works, add
+  // "workers_dev": false so the *.workers.dev address stops answering (runbook Step 10).
+  "routes": [{ "pattern": "zfadavi.com", "custom_domain": true }],
+
   "observability": { "enabled": true },
 
-  // Non-secret production values. The custom domain route (zfadavi.com) is added in Milestone 4.
+  // Non-secret production values. The Access values below are filled in once the Access application exists (runbook Step 10).
   "vars": {
     "APP_ENV": "production",
     "PUBLIC_SITE_URL": "https://zfadavi.com",
@@ -51,7 +55,6 @@
     "CONTACT_RETENTION_MONTHS": "12",
     "BOOKING_MAX_PARTICIPANTS": "10",
     "BOOKING_HOLD_MINUTES": "30",
-    // Filled in during Milestone 4 (Cloudflare Access application):
     "ACCESS_TEAM_NAME": "",
     "ACCESS_AUD": "",
     "ADMIN_EMAILS": ""

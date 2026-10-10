@@ -159,6 +159,7 @@ Do these in the dashboard (https://dash.cloudflare.com/) or ask Claude for the e
 4. **Cloudflare API token for GitHub deploys:** My Profile -> **API Tokens** -> **Create Token**. Use the "Edit Cloudflare Workers" template, then restrict it to your account and add **D1 Edit**. Name it `zakereh-art-github-deploy`, create it, and copy the token once (it is shown only once). Then add both as **repository secrets**: GitHub repo -> **Settings** -> **Secrets and variables** -> **Actions** -> tab **Secrets** -> **New repository secret**:
    - Name `CLOUDFLARE_API_TOKEN`, value = the token.
    - Name `CLOUDFLARE_ACCOUNT_ID`, value = your account ID (dashboard -> Workers & Pages overview; not sensitive, but the workflows need it).
+   - Name `AGE_PUBLIC_KEY`, value = the public `age1...` key from Step 13 (for the encrypted daily backup).
 
    **Why repository secrets, not environment secrets:** the automatic site rebuild (when you publish in `/admin`) and the daily backup run unattended. Secrets stored in an approval-protected environment would make those runs wait for you to click approve every time. Approval is applied only to production migrations (Step 1, item 3). Repository secrets are also not readable by pull requests from forks. Keep the repo private and `main` protected so nobody can push a workflow that reads them. Never paste the token in chat; if it leaks, roll it under My Profile -> API Tokens and update the GitHub secret.
    - Also add a repository **variable** (same page, tab **Variables**): `NEXT_PUBLIC_TURNSTILE_SITE_KEY` once you have it (Step 6). It is public.
@@ -302,6 +303,7 @@ Start the Worker (`wrangler dev`, port 8787) and web (`:3000`) per the README. T
 7. **Cron triggers** are declared in `wrangler.jsonc` and deploy automatically; confirm under the Worker's **Settings -> Triggers**.
 8. **Optional but recommended:** one Cloudflare WAF rate-limit rule for `/api/*` (Security -> WAF -> Rate limiting rules; the free plan allows a rule or two).
 9. Check HTTPS: SSL/TLS mode **Full (strict)** is the default for Workers custom domains; leave it.
+10. Once `https://zfadavi.com` works, tell Claude: it adds `"workers_dev": false` to `wrangler.jsonc` so the `*.workers.dev` address stops answering.
 
 # STEP 11 — Public site checks
 - `https://zfadavi.com` loads; an image loads from `media.zfadavi.com`.
@@ -315,6 +317,7 @@ Start the Worker (`wrangler dev`, port 8787) and web (`:3000`) per the README. T
 - Stripe -> Settings -> email alerts for failed payments and disputes.
 
 # STEP 13 — Backups and restore (do not skip)
+- The exact commands, the `age` key setup, decrypting and the restore procedure are in [docs/infrastructure.md](docs/infrastructure.md). Claude has already rehearsed the restore (`npm run restore-test -w apps/worker`).
 - D1 **Time Travel** lets you restore to any minute in the last 7 days on the Free plan (30 on Paid). Claude documents the command.
 - A scheduled GitHub Actions job exports the database daily, encrypts it with `age` and stores it as an artifact. You generate the `age` key pair once (Claude documents how), put the **public** key in GitHub secrets and keep the **private** key only in your password manager.
 - **Monthly:** download the latest encrypted dump to your own computer. Same-vendor backups do not help if you lose the Cloudflare account.
@@ -354,7 +357,9 @@ PAYMENT (test mode, then one real low-value payment + refund)
 
 INFRA
 - [ ] Health endpoints, HTTPS, custom domain; `workers.dev` URL disabled
-- [ ] Cron triggers listed; backups ran; restore tested; monthly offline copy done once
+- [ ] Cron triggers listed; the **backup** workflow ran green and you can decrypt its file; restore tested (`npm run restore-test -w apps/worker`); monthly offline copy done once
+- [ ] `npm run smoke -- https://zfadavi.com` prints "Smoke test passed"
+- [ ] Browser developer tools (Console) show no red "Content Security Policy" messages on home, a workshop page, Contact and the admin
 - [ ] No secrets in git (`gitleaks` clean)
 - [ ] Cloudflare account 2FA on, recovery codes stored offline
 - [ ] Switch Stripe to live keys only after everything above is green

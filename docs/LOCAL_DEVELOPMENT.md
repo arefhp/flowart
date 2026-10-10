@@ -190,6 +190,8 @@ npm run lint            # code style and common mistakes
 npm test                # unit tests (shared, Worker with real local D1/R2, website)
 npm run test:built-html # builds the site against a mock API and checks the generated HTML (the no-price rule, About, social links, languages)
 npm run test:e2e        # drives a real browser through the site, the admin and the whole booking journey (needs the seeded sample data; starts the servers itself, with the pretend payment page forced on). If you already run `npm run dev`, stop it first so the tests start their own Worker
+npm run smoke -- http://localhost:8788   # read-only health check of a running site (use after npm run preview, or with https://zfadavi.com)
+npm run restore-test -w apps/worker      # proves a database backup can be restored into a fresh database (local data)
 ```
 `npm run test:built-html` and `npm run build` both use the `apps/web/.next` folder, so stop `npm run dev` first. The first time you run the end-to-end tests, install the browser once: `npx playwright install chromium`.
 

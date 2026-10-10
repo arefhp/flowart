@@ -1,0 +1,51 @@
+name: backup
+
+# Daily export of the production database, encrypted with `age` so only the owner (private key in their
+# password manager) can read it. The dump holds customer data: it is never committed, never logged, and
+# the artifact expires after 30 days. The owner also downloads a copy monthly (runbook Step 13).
+# Data only: the table layout always comes from the migrations (see docs/infrastructure.md, "Restore").
+
+on:
+  schedule:
+    - cron: '41 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+      - name: Export and encrypt (no plain text is kept)
+        working-directory: apps/worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          AGE_PUBLIC_KEY: ${{ secrets.AGE_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$AGE_PUBLIC_KEY" || { echo "AGE_PUBLIC_KEY secret is missing (runbook Step 13)"; exit 1; }
+          npx wrangler d1 export DB --remote --no-schema --output "$RUNNER_TEMP/dump.sql" > /dev/null
+          test -s "$RUNNER_TEMP/dump.sql"
+          age -r "$AGE_PUBLIC_KEY" -o "$GITHUB_WORKSPACE/zakereh-art-$(date -u +%F).sql.age" "$RUNNER_TEMP/dump.sql"
+          shred -u "$RUNNER_TEMP/dump.sql" || rm -f "$RUNNER_TEMP/dump.sql"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup
+          path: zakereh-art-*.sql.age
+          retention-days: 30
+          if-no-files-found: error

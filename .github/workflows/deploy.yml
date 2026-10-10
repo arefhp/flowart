@@ -3,7 +3,7 @@ name: deploy
 # Builds the static site from the live API and deploys the Worker (API + static assets).
 # Triggered by: the owner (manual) and the Worker after an admin save (repository_dispatch
 # "site-rebuild"). The automatic deploy after a push to main is off until Milestone 4.
-# NOT yet exercised against a real Cloudflare account: that happens in Milestone 4 (runbook Step 10).
+# It needs the real Cloudflare account to run (runbook Step 10); the smoke test at the end checks the live site.
 
 on:
   workflow_dispatch:
@@ -63,3 +63,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
+
+      - name: Smoke test the live site
+        # skipped on the very first (empty) deploy, when the domain may not be connected yet
+        if: ${{ !inputs.allow_empty }}
+        run: |
+          for i in 1 2 3 4 5 6; do node scripts/smoke.mjs https://zfadavi.com && exit 0; echo "retrying in 20s"; sleep 20; done
+          exit 1

@@ -10,6 +10,7 @@
     "migrate:local": "wrangler d1 migrations apply DB --local",
     "migrate:prod": "wrangler d1 migrations apply DB --remote",
     "seed": "tsx scripts/seed.ts",
+    "restore-test": "node scripts/restore-test.mjs",
     "test": "node scripts/verify-env-example.mjs && vitest run",
     "typecheck": "tsc --noEmit",
     "types": "wrangler types"
