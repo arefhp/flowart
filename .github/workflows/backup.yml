@@ -43,7 +43,7 @@ jobs:
           test -s "$RUNNER_TEMP/dump.sql"
           age -r "$AGE_PUBLIC_KEY" -o "$GITHUB_WORKSPACE/zakereh-art-$(date -u +%F).sql.age" "$RUNNER_TEMP/dump.sql"
           shred -u "$RUNNER_TEMP/dump.sql" || rm -f "$RUNNER_TEMP/dump.sql"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: db-backup
           path: zakereh-art-*.sql.age
