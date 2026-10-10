@@ -1,0 +1,27 @@
+# secrets and local config
+.dev.vars
+.env
+.env.*
+!*.example
+apps/web/.env.local
+
+# local Cloudflare state, build output, dependencies
+.wrangler/
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+
+# database dumps and encrypted backups (contain customer data)
+*.sql
+!apps/worker/migrations/*.sql
+*.age
+
+# owner's original photos (kept on the owner's disk, never committed)
+input/
+
+# local editor/agent settings
+.claude/settings.local.json
+.impeccable/
