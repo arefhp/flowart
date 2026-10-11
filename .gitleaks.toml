@@ -12,3 +12,13 @@ paths = [
   '''apps/worker/test/.*''',
   '''apps/worker/vitest\.config\.ts''',
 ]
+
+# The Cloudflare Access application AUD tag is a public identifier, not a secret: the Worker uses it to
+# check that a sign-in token was issued for THIS application, and it must sit in wrangler.jsonc.
+# Only that one line of that one file is exempt.
+[[allowlists]]
+description = "Cloudflare Access AUD tag in wrangler.jsonc (public identifier)"
+condition = "AND"
+paths = ['''apps/worker/wrangler\.jsonc''']
+regexTarget = "line"
+regexes = ['''"ACCESS_AUD"\s*:''']
