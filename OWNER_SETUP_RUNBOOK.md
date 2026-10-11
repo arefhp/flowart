@@ -315,10 +315,27 @@ The local admin has no login. The sample data is useful for browsing, but create
 The pretend-payment default is useful for ordinary development, but it does **not** test a real Stripe card, webhook delivery or Stripe refund. To perform the checks below, use a Stripe **test-mode** secret key only; never use a live key.
 
 1. In `apps/worker/.dev.vars`, set `STRIPE_SECRET_KEY` to your Stripe test-mode secret key (`sk_test_...`). Do not paste it into chat or commit the file. Keep `EMAIL_DRIVER=console` if you want to inspect email contents in the Worker terminal.
-2. Start the local site with `npm run dev` and leave it running. In a **second PowerShell terminal**, from the repository root, sign in to the Stripe CLI and start forwarding the webhook events the app handles:
+2. Start the local site with `npm run dev` and leave it running. In a **second PowerShell terminal**, from the repository root, sign in to the Stripe CLI and start forwarding the webhook events the app handles.
+
+   If the browser opens a **Review and authorize** page but **Authorize** is disabled, this is usually a Stripe CLI authorization/session issue, not a problem with the website or `EMAIL_DRIVER`. For Stripe CLI versions newer than 1.50.0, an account **Administrator or IAM Admin** must enable CLI access for the account and environment you want to use. In the Stripe Dashboard, select the intended test account or sandbox, then open **Settings -> Team and security -> MCP and CLI access** and enable CLI access. Ask an Administrator or IAM Admin to do this if you cannot change the setting yourself.
+
+   If that setting is already enabled and the page says **"Modify permissions or accounts to authorize"**, the CLI session may already be authorized for the accounts shown, so there is nothing new for that page to apply. Do not remove an account just to enable the button. In a terminal, check the existing CLI login:
 
    ```powershell
-   stripe login
+   stripe login list
+   ```
+
+   If the intended account/sandbox is listed, select it if needed with `stripe switch`, then continue to `stripe listen`; you may not need to authorize again. To change the current session's authorized accounts or permissions, use `stripe reauth`. To explicitly start a fresh browser login, use `stripe login --new-session` (this replaces/revokes the current CLI login session). Make sure the selected CLI account/sandbox matches the test account whose `sk_test_...` key you put in `apps/worker/.dev.vars`.
+
+   If browser authorization still is not possible, use the CLI's interactive API-key login instead. Run this in the second terminal and enter the **test** secret key only at the terminal prompt; never paste it into chat:
+
+   ```powershell
+   stripe login --interactive
+   ```
+
+   Continue with the webhook listener after login:
+
+   ```powershell
    stripe listen --forward-to localhost:8787/api/stripe/webhook --events checkout.session.completed,checkout.session.expired,charge.refunded
    ```
 
@@ -332,7 +349,39 @@ For more Stripe setup detail and troubleshooting, see [docs/LOCAL_DEVELOPMENT.md
 
 # STEP 10 — Deploy to Cloudflare
 1. **Apply migrations to production** (explicit step, run by you or the manual `migrate` workflow after approval): `npm run migrate:prod`.
-2. **Set Worker secrets** (enter each value yourself when prompted; never in chat): `npx wrangler secret put STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `GITHUB_DISPATCH_TOKEN`. Use the live/prod keys, not the local ones.
+2. **Set the production Worker's private secrets.** These are stored by Cloudflare for Worker `zakereh-art`; they do not go in `wrangler.jsonc`, `.env.local`, GitHub variables, or chat. Do not copy the values from `.dev.vars`: create/use the production credentials listed below. Your recorded Stripe decision is **Sandbox until launch**, so use matching Stripe **test-mode** credentials while doing production-site acceptance tests. Switch both Stripe values to live mode only at the final launch check (Step 15).
+
+   Open PowerShell in the repository, then go to the Worker folder and verify Wrangler is signed into the Cloudflare account that owns `zakereh-art`:
+
+   ```powershell
+   Set-Location C:\SourceCodes\flowart\apps\worker
+   npx wrangler whoami
+   ```
+
+   Confirm the account is the right one before continuing. Set each secret separately: run the command, wait for Wrangler's prompt, paste that secret into the terminal prompt, and press Enter. Do not put the value after the command (that would save it in shell history). Repeat for all five names:
+
+   ```powershell
+   npx wrangler secret put STRIPE_SECRET_KEY
+   npx wrangler secret put STRIPE_WEBHOOK_SECRET
+   npx wrangler secret put TURNSTILE_SECRET_KEY
+   npx wrangler secret put RESEND_API_KEY
+   npx wrangler secret put GITHUB_DISPATCH_TOKEN
+   ```
+
+   Get the values as follows:
+   - `STRIPE_SECRET_KEY`: Stripe Dashboard -> select the **sandbox/test environment** for acceptance tests -> Developers/Workbench -> API keys -> copy its secret key (`sk_test_...`). At launch, replace it with the live secret key (`sk_live_...`) from live mode.
+   - `STRIPE_WEBHOOK_SECRET`: create a webhook endpoint in the **same Stripe environment** as the API key, URL `https://zfadavi.com/api/stripe/webhook`, subscribed to `checkout.session.completed`, `checkout.session.expired`, and `charge.refunded`. Reveal/copy that endpoint's signing secret (`whsec_...`). Do not use the `whsec_...` from local `stripe listen` here; that is for local development only. At launch, create/configure the live-mode endpoint and replace this with its live signing secret.
+   - `TURNSTILE_SECRET_KEY`: Cloudflare Dashboard -> Turnstile -> production widget `zakereh-art` -> copy **Secret key** (not the public Site key). The widget must allow `zfadavi.com`.
+   - `RESEND_API_KEY`: Resend -> API Keys -> create/use the separate production key `zakereh-art-prod` with **Sending access** only. Use it after `zfadavi.com` is verified in Resend.
+   - `GITHUB_DISPATCH_TOKEN`: GitHub -> repository `arefhp/flowart` -> Settings -> Developer settings -> Fine-grained personal access tokens -> create a token restricted to this repository with **Actions: Read and write**. This lets the Worker request the site-rebuild workflow. Keep it private.
+
+   Wrangler should confirm each secret was uploaded. To check that names (not values) are present, run:
+
+   ```powershell
+   npx wrangler secret list
+   ```
+
+   Do not post terminal output if it includes a value; the list should show secret names only. Replacing an existing secret overwrites the old value. If the first `secret put` says the Worker does not exist, complete the first/bootstrap deploy in item 3, then return here and set the secrets; do not try to paste them into config files.
 3. **First deploy:** run the GitHub `deploy` workflow (GitHub -> Actions -> deploy -> Run workflow; it uses the repository secrets from Step 3 and needs no approval click). Claude documents the very first bootstrap deploy (API first, then the site build, because the site is built from the API's data).
 4. **Custom domain:** Workers & Pages -> `zakereh-art` -> **Settings** -> **Domains & Routes** -> **Add** -> **Custom domain** -> `zfadavi.com`. Disable the `workers.dev` URL once the domain works.
 5. **Cloudflare Access (admin login):** Zero Trust (https://one.dash.cloudflare.com/) -> choose a team name (the free plan is fine; this is your `ACCESS_TEAM_NAME`) -> **Access** -> **Applications** -> **Add an application** -> **Self-hosted**:
@@ -342,7 +391,7 @@ For more Stripe setup detail and troubleshooting, see [docs/LOCAL_DEVELOPMENT.md
    - Session duration: e.g. 24 hours.
    - Copy the application's **Audience (AUD) tag** and give Claude the team name and AUD (not secret) so they go into `wrangler.jsonc` as `ACCESS_TEAM_NAME`, `ACCESS_AUD`; also set `ADMIN_EMAILS` to your address.
    - Test in a private browser window: `https://zfadavi.com/admin` must ask for your email and send a code, and `https://zfadavi.com/api/admin/me` must not work without signing in.
-6. **Stripe webhook:** Stripe -> Developers -> Webhooks -> add endpoint `https://zfadavi.com/api/stripe/webhook` and select exactly these three events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`. Put its signing secret (`whsec_...`) in the Worker secret `STRIPE_WEBHOOK_SECRET`. The Worker refuses to start in production without `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, and never with `STRIPE_FAKE` set.
+6. **Stripe webhook:** Configure the endpoint in the same Stripe mode as `STRIPE_SECRET_KEY`: sandbox/test mode for acceptance checks, then live mode at launch. Use URL `https://zfadavi.com/api/stripe/webhook` and select exactly these three events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`. Put that endpoint's signing secret (`whsec_...`) in the Worker secret `STRIPE_WEBHOOK_SECRET`. The Worker refuses to start in production without `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, and never with `STRIPE_FAKE` set.
 7. **Cron triggers** are declared in `wrangler.jsonc` and deploy automatically; confirm under the Worker's **Settings -> Triggers**.
 8. **Optional but recommended:** one Cloudflare WAF rate-limit rule for `/api/*` (Security -> WAF -> Rate limiting rules; the free plan allows a rule or two).
 9. Check HTTPS: SSL/TLS mode **Full (strict)** is the default for Workers custom domains; leave it.

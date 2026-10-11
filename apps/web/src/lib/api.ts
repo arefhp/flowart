@@ -14,6 +14,13 @@ const allowEmpty = process.env.ALLOW_EMPTY_BUILD === '1';
 
 class ApiNotFound extends Error {}
 
+/**
+ * A static export needs at least one page for every dynamic route. A brand-new site (the first, empty
+ * deploy) has no artworks or workshops yet, so one placeholder page is built; it just shows the 404 page.
+ * The next rebuild, with real content, replaces it.
+ */
+const PLACEHOLDER_SLUG = '__none__';
+
 async function get<T>(path: string, empty: T): Promise<T> {
   let res: Response;
   try {
@@ -52,6 +59,7 @@ export async function getEvents(lang: Locale): Promise<PublicEvent[]> {
 }
 
 export async function getEvent(slug: string, lang: Locale): Promise<PublicEvent> {
+  if (slug === PLACEHOLDER_SLUG) notFound();
   try {
     return await get<PublicEvent>(`/api/events/${encodeURIComponent(slug)}?lang=${lang}`, undefined as never);
   } catch (err) {
@@ -62,10 +70,12 @@ export async function getEvent(slug: string, lang: Locale): Promise<PublicEvent>
 
 /** Slugs for generateStaticParams (every public event, including finished and cancelled ones). */
 export async function getEventSlugs(): Promise<string[]> {
-  return (await getEvents('en')).map((e) => e.slug);
+  const slugs = (await getEvents('en')).map((e) => e.slug);
+  return slugs.length > 0 ? slugs : [PLACEHOLDER_SLUG];
 }
 
 export async function getArtwork(slug: string, lang: Locale): Promise<ArtworkDetail> {
+  if (slug === PLACEHOLDER_SLUG) notFound();
   try {
     return await get<ArtworkDetail>(`/api/artworks/${encodeURIComponent(slug)}?lang=${lang}`, undefined as never);
   } catch (err) {
@@ -84,5 +94,6 @@ export async function getSocial(): Promise<SocialLink[]> {
 
 /** Slugs for generateStaticParams. */
 export async function getArtworkSlugs(): Promise<string[]> {
-  return (await getArtworks('en')).map((a) => a.slug);
+  const slugs = (await getArtworks('en')).map((a) => a.slug);
+  return slugs.length > 0 ? slugs : [PLACEHOLDER_SLUG];
 }
