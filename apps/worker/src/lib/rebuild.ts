@@ -87,7 +87,7 @@ export async function rebuildStatus(env: Env): Promise<RebuildStatus> {
         : 'Rebuild is not configured: set GITHUB_DISPATCH_TOKEN.',
     };
   }
-  if (error) return { ...base, state: 'failed', message: 'The last rebuild could not be started.' };
+  if (error) return { ...base, state: 'failed', message: `The last rebuild could not be started (${error.replace(/^Error: /, '')}). Check the GitHub token (permission Contents: Read and write) and press "Rebuild site".` };
 
   let builtAt: string | null = null;
   try {

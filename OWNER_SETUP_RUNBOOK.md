@@ -163,7 +163,7 @@ Do these in the dashboard (https://dash.cloudflare.com/) or ask Claude for the e
 
    **Why repository secrets, not environment secrets:** the automatic site rebuild (when you publish in `/admin`) and the daily backup run unattended. Secrets stored in an approval-protected environment would make those runs wait for you to click approve every time. Approval is applied only to production migrations (Step 1, item 3). Repository secrets are also not readable by pull requests from forks. Keep the repo private and `main` protected so nobody can push a workflow that reads them. Never paste the token in chat; if it leaks, roll it under My Profile -> API Tokens and update the GitHub secret.
    - Also add a repository **variable** (same page, tab **Variables**): `NEXT_PUBLIC_TURNSTILE_SITE_KEY` once you have it (Step 6). It is public.
-5. **Rebuild token:** GitHub -> Settings -> Developer settings -> **Fine-grained personal access tokens** -> repository `arefhp/flowart` only, permission **Actions: Read and write** (and Contents: Read). Save it only as the Worker secret `GITHUB_DISPATCH_TOKEN` (set in Step 10). This lets your admin "publish" action rebuild the site.
+5. **Rebuild token:** GitHub -> Settings -> Developer settings -> **Fine-grained personal access tokens** -> repository `arefhp/flowart` only, permission **Contents: Read and write** (GitHub requires this for the repository-dispatch call that starts the rebuild; "Actions" alone is not enough, and the rebuild silently never starts) and Metadata: Read (added automatically). Save it only as the Worker secret `GITHUB_DISPATCH_TOKEN` (set in Step 10). This lets your admin "publish" action rebuild the site.
 
 Notes: D1 has no passwords, connection strings, pausing, or percent-encoding to worry about. Everything in D1/R2 is reached through bindings from the Worker.
 
@@ -373,7 +373,7 @@ For more Stripe setup detail and troubleshooting, see [docs/LOCAL_DEVELOPMENT.md
    - `STRIPE_WEBHOOK_SECRET`: create a webhook endpoint in the **same Stripe environment** as the API key, URL `https://zfadavi.com/api/stripe/webhook`, subscribed to `checkout.session.completed`, `checkout.session.expired`, and `charge.refunded`. Reveal/copy that endpoint's signing secret (`whsec_...`). Do not use the `whsec_...` from local `stripe listen` here; that is for local development only. At launch, create/configure the live-mode endpoint and replace this with its live signing secret.
    - `TURNSTILE_SECRET_KEY`: Cloudflare Dashboard -> Turnstile -> production widget `zakereh-art` -> copy **Secret key** (not the public Site key). The widget must allow `zfadavi.com`.
    - `RESEND_API_KEY`: Resend -> API Keys -> create/use the separate production key `zakereh-art-prod` with **Sending access** only. Use it after `zfadavi.com` is verified in Resend.
-   - `GITHUB_DISPATCH_TOKEN`: GitHub -> repository `arefhp/flowart` -> Settings -> Developer settings -> Fine-grained personal access tokens -> create a token restricted to this repository with **Actions: Read and write**. This lets the Worker request the site-rebuild workflow. Keep it private.
+   - `GITHUB_DISPATCH_TOKEN`: GitHub -> repository `arefhp/flowart` -> Settings -> Developer settings -> Fine-grained personal access tokens -> create a token restricted to this repository with **Contents: Read and write** (and Metadata: Read, automatic). This lets the Worker request the site-rebuild workflow. Keep it private.
 
    Wrangler should confirm each secret was uploaded. To check that names (not values) are present, run:
 

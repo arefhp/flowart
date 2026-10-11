@@ -66,7 +66,7 @@ TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 # OPTIONAL. owner/name of the GitHub repository. Pre-filled.
 GITHUB_REPO=arefhp/flowart
 # SECRET. OPTIONAL locally (without it the rebuild is skipped and the admin says so), REQUIRED in
-# production. Fine-grained token limited to this repo, permission Actions: Read and write.
+# production. Fine-grained token limited to this repo, permission Contents: Read and write (needed for repository_dispatch).
 # GitHub -> Settings -> Developer settings -> Fine-grained tokens. Example format: github_pat_xxx
 GITHUB_DISPATCH_TOKEN=
 
