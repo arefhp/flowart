@@ -31,7 +31,7 @@ Milestone 1 runs locally with no accounts, so these are optional to start. Provi
 |---|---|---|---|---|
 | `GITHUB_REPO` (`owner/name`, this repo is `arefhp/flowart`) | arefhp/flowart | GitHub repo URL | Step 1 | [x] |
 | `CLOUDFLARE_ACCOUNT_ID` | 53b7273413025db1bae1299f9a221414 | Cloudflare dashboard -> Workers & Pages overview (right side), or the URL after `dash.cloudflare.com/` | Step 3 | [x] |
-| `D1_DATABASE_ID` | 7f7524db-8f36-414a-8f67-119b0422996d | Cloudflare -> Storage & Databases -> D1 -> `zakereh-art-db` -> **Database ID** | Step 3 | [x] |
+| `D1_DATABASE_ID` | 014f8015-dadf-4300-96e4-2a3f6b86dcba | Cloudflare -> Storage & Databases -> D1 -> `zakereh-art-db` -> **Database ID** | Step 3 | [x] |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (production widget, **public**) | 0x4AAAAAAFRsKGAs4iPYF9Vj | Cloudflare -> Turnstile -> widget `zakereh-art` -> **Site key**. Local development uses the always-pass test key and needs nothing here | Step 6 | [x] |
 | `TURNSTILE_SITE_KEY_DEV` (optional, widget `zakereh-art-dev`, **public**) | 0x4AAAAAAFRsda8oQ5YVFOxm | same page, the dev widget | Step 6 | [x] |
 
