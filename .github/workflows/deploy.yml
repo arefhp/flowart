@@ -47,6 +47,14 @@ jobs:
 
       - run: npm ci
 
+      - name: Check the public spam-check key is set
+        # Without it the contact and booking forms cannot load the spam check and nothing can be sent.
+        if: ${{ !inputs.allow_empty }}
+        env:
+          KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+        run: |
+          test -n "$KEY" || { echo "::error::The repository variable NEXT_PUBLIC_TURNSTILE_SITE_KEY is empty. Add it under Settings > Secrets and variables > Actions > Variables (runbook Step 6)."; exit 1; }
+
       - name: Build the static site from the live API
         env:
           BUILD_API_BASE_URL: https://zfadavi.com
