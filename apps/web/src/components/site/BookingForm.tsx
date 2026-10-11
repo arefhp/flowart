@@ -18,8 +18,8 @@ interface Props {
   /** how many places can be chosen (already limited by places left and the per-booking maximum) */
   maxPlaces: number;
   holdMinutes: number;
-  /** called when the server says the places changed, so the page can refresh its numbers */
-  onStale: () => void;
+  /** called when the server says the places changed, so the page can refresh its numbers; the message stays visible even if the form then goes away */
+  onStale: (message: string) => void;
 }
 
 /**
@@ -108,8 +108,9 @@ export function BookingForm({ event, locale, t, labels, maxPlaces, holdMinutes, 
         return;
       }
       const code = body?.error?.code;
-      setFormError(failure(code, body?.error?.details?.remaining));
-      if (code === 'sold_out' || code === 'not_enough_places' || code?.startsWith('event_')) onStale();
+      const message = failure(code, body?.error?.details?.remaining);
+      setFormError(message);
+      if (code === 'sold_out' || code === 'not_enough_places' || code?.startsWith('event_')) onStale(message);
       if (code === 'turnstile_failed') human.reset();
     } catch {
       setFormError(t.error);

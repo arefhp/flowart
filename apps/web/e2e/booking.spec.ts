@@ -111,7 +111,7 @@ test.describe('booking a paid workshop', () => {
     });
     expect(other.status()).toBe(201);
     await fillAndSubmit(page, { places: 2 });
-    await expect(page.locator('form').getByRole('alert')).toContainText('sold out');
+    await expect(page.getByRole('alert').filter({ hasText: 'sold out' })).toBeVisible(); // stays after the form goes away
     await expect(page.getByText('Sold out')).toBeVisible(); // the page refreshed its numbers
   });
 });

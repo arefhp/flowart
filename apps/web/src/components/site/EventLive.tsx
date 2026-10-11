@@ -32,7 +32,12 @@ export function EventLive({
   const now = useNow(builtAtMs);
   const [availability, setAvailability] = useState<EventAvailability | undefined>();
   const [reloads, setReloads] = useState(0);
-  const refresh = useCallback(() => setReloads((n) => n + 1), []);
+  // why the last booking attempt failed; kept here because the form itself may disappear (sold out)
+  const [notice, setNotice] = useState('');
+  const refresh = useCallback((message: string) => {
+    setNotice(message);
+    setReloads((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     let current = true;
@@ -64,6 +69,11 @@ export function EventLive({
         {text}
       </p>
       {state.kind === 'cancelled' ? <p className="text-stone">{t.cancelledNotice}</p> : null}
+      {notice && state.kind !== 'left' ? (
+        <p role="alert" className="text-alert">
+          {notice}
+        </p>
+      ) : null}
       {open && availability ? (
         <>
           <BookingForm
