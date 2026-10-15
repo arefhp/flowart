@@ -36,18 +36,53 @@ function writeAddress(raw: Raw) {
 /**
  * One choice in the sidebar: a quiet text row, the active one marked with a bar and heavier type.
  * On hover the row gets a soft tint and a pointer cursor, so it is clear that it can be clicked.
+ * "check" is the on/off variant: the same row with a checkbox square in front (for "Available only").
  */
 function Option({
   active,
   onClick,
   count,
+  check = false,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   count?: number;
+  check?: boolean;
   children: React.ReactNode;
 }) {
+  if (check) {
+    // Same row as the others (label on the left, bar and tint when chosen); the checkbox sits where the
+    // counts are, so the right-hand edge stays one tidy column.
+    return (
+      <button
+        type="button"
+        aria-pressed={active}
+        onClick={onClick}
+        className={`group flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-3 border-l-2 pl-4 pr-2 text-left text-[0.98rem] transition-colors ${
+          active
+            ? 'border-ink bg-hairline/40 font-medium text-ink'
+            : 'border-transparent text-stone hover:border-ink hover:bg-hairline/50 hover:text-ink'
+        }`}
+      >
+        <span>{children}</span>
+        <span
+          aria-hidden="true"
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] border transition-colors duration-150 ${
+            active ? 'border-ink bg-ink' : 'border-stone/60 bg-paper group-hover:border-ink'
+          }`}
+        >
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="#fbfbf9" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path
+              d="M3.5 8.5 6.7 11.5 12.5 4.8"
+              pathLength={1}
+              style={{ strokeDasharray: 1, strokeDashoffset: active ? 0 : 1, transition: 'stroke-dashoffset 180ms ease-out' }}
+            />
+          </svg>
+        </span>
+      </button>
+    );
+  }
   return (
     <button
       type="button"
@@ -252,7 +287,7 @@ export function ArtworksBrowser({
 
           {hasUnavailable ? (
             <Group id="f-availability" label={f.availability}>
-              <Option active={availableOnly} onClick={() => set('available', '1')}>
+              <Option check active={availableOnly} onClick={() => set('available', '1')}>
                 {f.availableOnly}
               </Option>
             </Group>

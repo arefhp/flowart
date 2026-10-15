@@ -42,6 +42,21 @@ test.describe('artwork filters (sidebar)', () => {
     await expect(group(page, 'Category').getByRole('button', { name: 'Fine Art' })).toHaveCSS('border-left-color', 'rgb(30, 36, 48)');
   });
 
+  test('"Available only" is a checkbox: an empty square at the right edge that gets a tick when it is on', async ({ page }) => {
+    await page.goto('/artworks?category=all');
+    const box = group(page, 'Availability').getByRole('button', { name: 'Available only' });
+    await expect(box).toHaveCSS('cursor', 'pointer');
+    await expect(box).toHaveAttribute('aria-pressed', 'false');
+    const square = box.locator('span[aria-hidden="true"]').first();
+    const empty = await square.evaluate((e) => getComputedStyle(e).backgroundColor);
+    await box.click();
+    await expect(box).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => square.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(empty);
+    await expect.poll(() => square.locator('path').evaluate((e) => getComputedStyle(e).strokeDashoffset)).toBe('0px'); // the tick has drawn in
+    await box.click(); // and it can be turned off again
+    await expect(box).toHaveAttribute('aria-pressed', 'false');
+  });
+
   test('the page shows every artwork when All is chosen', async ({ page }) => {
     await page.goto('/artworks?category=all');
     await expect(cards(page)).toHaveCount(4);
