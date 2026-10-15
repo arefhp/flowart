@@ -18,6 +18,8 @@ export type BrowserStrings = {
 
 type Raw = { category: string | null; size: string | null; price: string | null; available: string | null };
 const NONE: Raw = { category: null, size: null, price: null, available: null };
+/** 'all' in the address means the visitor chose "All" on purpose (so the first-category default is not applied). */
+const ALL = 'all';
 
 function readAddress(): Raw {
   const p = new URLSearchParams(window.location.search);
@@ -31,30 +33,59 @@ function writeAddress(raw: Raw) {
   window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
 }
 
-/** One choice in the sidebar: a quiet text row, the active one marked with a bar and heavier type. */
+/**
+ * One choice in the sidebar. It is drawn as a chip with an outline, so it looks pressable; the chosen
+ * one is filled solid. "check" is the on/off variant (a real checkbox square) for "Available only".
+ */
 function Option({
   active,
   onClick,
   count,
+  check = false,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   count?: number;
+  check?: boolean;
   children: React.ReactNode;
 }) {
+  if (check) {
+    return (
+      <button
+        type="button"
+        aria-pressed={active}
+        onClick={onClick}
+        className="group flex min-h-[44px] w-full cursor-pointer items-center gap-3 rounded-sm text-left text-[0.98rem] text-ink"
+      >
+        <span
+          aria-hidden="true"
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] border transition-colors ${
+            active ? 'border-ink bg-ink text-paper' : 'border-stone bg-paper group-hover:border-ink'
+          }`}
+        >
+          {active ? (
+            <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2.5 6.5 5 9l4.5-5.5" />
+            </svg>
+          ) : null}
+        </span>
+        <span>{children}</span>
+      </button>
+    );
+  }
   return (
     <button
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`flex min-h-[44px] w-full items-center justify-between gap-3 border-l-2 pl-4 pr-1 text-left text-[0.98rem] transition-colors ${
-        active ? 'border-ink font-medium text-ink' : 'border-transparent text-stone hover:border-hairline hover:text-ink'
+      className={`inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border px-4 text-[0.95rem] transition-colors ${
+        active ? 'border-ink bg-ink text-paper' : 'border-stone/50 bg-paper text-ink hover:border-ink hover:bg-hairline/50'
       }`}
     >
       <span>{children}</span>
       {count !== undefined ? (
-        <span aria-hidden="true" className="text-sm tabular-nums text-stone/80">
+        <span aria-hidden="true" className={`text-sm tabular-nums ${active ? 'text-paper/70' : 'text-stone'}`}>
           {count}
         </span>
       ) : null}
@@ -93,7 +124,7 @@ function Group({ id, label, children }: { id: string; label: string; children: R
           </svg>
         </button>
       </h3>
-      <div id={`${id}-options`} hidden={!open} className="pb-3">
+      <div id={`${id}-options`} hidden={!open} className="flex flex-wrap gap-2 pb-4 pt-1">
         {children}
       </div>
     </div>
@@ -125,17 +156,22 @@ export function ArtworksBrowser({
 
   // apply the choices in the address after load, and follow the browser's back/forward buttons
   useEffect(() => {
-    const sync = () => setRaw(readAddress());
+    // with no category in the address, start on the first category (the visitor can still pick All)
+    const sync = () => {
+      const r = readAddress();
+      setRaw(r.category === null && categories.length > 1 ? { ...r, category: categories[0]!.slug } : r);
+    };
     sync();
     window.addEventListener('popstate', sync);
     return () => window.removeEventListener('popstate', sync);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once; the category list is fixed for a built page
   }, []);
 
   const bands = useMemo(() => (SHOW_PRICE_FILTER ? usableBands(artworks) : []), [artworks]);
   const hasUnavailable = artworks.some((a) => a.status !== 'available') && artworks.some((a) => a.status === 'available');
 
   // read the choices from the address; anything that is not a real option is ignored
-  const category = categories.find((c) => c.slug === raw.category)?.slug ?? null;
+  const category = categories.find((c) => c.slug === raw.category)?.slug ?? null; // 'all' or anything unknown = no category filter
   const size = SIZE_CLASSES.find((s) => s === raw.size) ?? null;
   const band: PriceBand | null = bands.find((b) => b.id === raw.price) ?? null;
   const availableOnly = raw.available === '1' && hasUnavailable;
@@ -143,15 +179,18 @@ export function ArtworksBrowser({
   const active = activeCount > 0;
 
   function set(key: keyof Raw, value: string | null) {
-    // choosing the active one again clears it
-    const next: Raw = { ...raw, [key]: value === null || raw[key] === value ? null : value };
+    // choosing the active one again clears it. For the category, "clear" is an explicit All, so the
+    // first-category default does not come back.
+    const cleared = key === 'category' ? ALL : null;
+    const next: Raw = { ...raw, [key]: value === null || raw[key] === value ? cleared : value };
     setRaw(next);
     writeAddress(next);
   }
 
   function clear() {
-    setRaw(NONE);
-    writeAddress(NONE);
+    const all: Raw = { ...NONE, category: ALL };
+    setRaw(all);
+    writeAddress(all);
   }
 
   const shown = artworks.filter(
@@ -237,7 +276,7 @@ export function ArtworksBrowser({
 
           {hasUnavailable ? (
             <Group id="f-availability" label={f.availability}>
-              <Option active={availableOnly} onClick={() => set('available', '1')}>
+              <Option check active={availableOnly} onClick={() => set('available', '1')}>
                 {f.availableOnly}
               </Option>
             </Group>

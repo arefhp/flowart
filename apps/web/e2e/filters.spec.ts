@@ -16,15 +16,44 @@ const optionNames = (g: Locator) => g.locator('button[aria-pressed]').evaluateAl
 const priceFilterTest = SHOW_PRICE_FILTER ? test : test.skip;
 
 test.describe('artwork filters (sidebar)', () => {
-  test('the page shows every artwork until a filter is chosen', async ({ page }) => {
+  test('the first category is selected when the page opens, and All is one click away', async ({ page }) => {
     await page.goto('/artworks');
-    await expect(cards(page)).toHaveCount(4);
+    const category = group(page, 'Category');
+    await expect(category.getByRole('button', { name: 'Fine Art' })).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => titles(page)).toEqual(['Evening Reverie', 'Morning Light', 'Quiet Garden']);
     for (const name of ['Category', 'Size', 'Availability']) await expect(group(page, name)).toBeVisible();
+
+    await category.getByRole('button', { name: 'All' }).click();
+    await expect(cards(page)).toHaveCount(4);
+    await expect(page).toHaveURL(/\?category=all$/);
+    await page.reload(); // choosing All on purpose survives a reload: the default does not come back
+    await expect(cards(page)).toHaveCount(4);
+    await expect(category.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('the choices look pressable: outlined chips, the chosen one filled, and a real checkbox', async ({ page }) => {
+    await page.goto('/artworks');
+    const resin = group(page, 'Category').getByRole('button', { name: 'Resin' });
+    await expect(resin).toHaveCSS('cursor', 'pointer');
+    await expect(resin).toHaveCSS('border-top-width', '1px');
+    const chosen = group(page, 'Category').getByRole('button', { name: 'Fine Art' });
+    const filled = await chosen.evaluate((e) => getComputedStyle(e).backgroundColor);
+    const plain = await resin.evaluate((e) => getComputedStyle(e).backgroundColor);
+    expect(filled).not.toBe(plain);
+    const avail = group(page, 'Availability').getByRole('button', { name: 'Available only' });
+    await avail.click();
+    await expect(avail).toHaveAttribute('aria-pressed', 'true');
+    await expect(avail.locator('svg')).toBeVisible(); // the tick inside the box
+  });
+
+  test('the page shows every artwork when All is chosen', async ({ page }) => {
+    await page.goto('/artworks?category=all');
+    await expect(cards(page)).toHaveCount(4);
     await expect(page.getByText(/Showing \d+ of/)).toHaveCount(0); // quiet until a filter is used
   });
 
   test('the filters are in a sidebar beside the gallery, not above it', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     const side = await page.getByRole('complementary', { name: 'Filter the artworks' }).boundingBox();
     const firstCard = await cards(page).first().boundingBox();
     expect(side!.x).toBeLessThan(firstCard!.x); // to the left
@@ -34,18 +63,18 @@ test.describe('artwork filters (sidebar)', () => {
 
   test('NOT SHOWN FOR NOW: there is no Price filter', async ({ page }) => {
     test.skip(SHOW_PRICE_FILTER, 'the price filter is switched on');
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     await expect(group(page, 'Price')).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Under DKK|DKK 5,000/ })).toHaveCount(0);
     // artworks that have a price still show it on their own card
     await expect(cards(page).filter({ hasText: 'Quiet Garden' })).toContainText('DKK 12,000');
     // a price in the address does nothing while the filter is off
-    await page.goto('/artworks?price=mid');
+    await page.goto('/artworks?category=all&price=mid');
     await expect.poll(() => titles(page)).toEqual(['Evening Reverie', 'Morning Light', 'Quiet Garden', 'Resin Tide']);
   });
 
   test('category: Resin shows only the resin work, the address changes, and Clear brings everything back', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     await group(page, 'Category').getByRole('button', { name: 'Resin' }).click();
     await expect(cards(page)).toHaveCount(1);
     await expect.poll(() => titles(page)).toEqual(['Resin Tide']);
@@ -55,11 +84,11 @@ test.describe('artwork filters (sidebar)', () => {
 
     await page.getByRole('button', { name: 'Clear filters' }).click();
     await expect(cards(page)).toHaveCount(4);
-    await expect(page).toHaveURL(/\/artworks$/);
+    await expect(page).toHaveURL(/\/artworks\?category=all$/); // an explicit All, so the first-category default does not come back
   });
 
   test('choosing the active choice again, or All, removes that filter', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     const fine = group(page, 'Category').getByRole('button', { name: 'Fine Art' });
     await fine.click();
     await expect(cards(page)).toHaveCount(3);
@@ -71,7 +100,7 @@ test.describe('artwork filters (sidebar)', () => {
   });
 
   test('size ALWAYS offers Small, Medium and Large, even when nothing is large', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     const size = group(page, 'Size');
     expect(await optionNames(size)).toEqual(['All', 'Small', 'Medium', 'Large']);
 
@@ -89,7 +118,7 @@ test.describe('artwork filters (sidebar)', () => {
   });
 
   test('each option shows how many artworks it has', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     const counts = async (name: string) =>
       group(page, name).locator('button[aria-pressed]').evaluateAll((els) => els.map((e) => e.querySelectorAll('span')[1]?.textContent?.trim()));
     expect(await counts('Category')).toEqual(['4', '3', '1']); // All, Fine Art, Resin
@@ -97,7 +126,7 @@ test.describe('artwork filters (sidebar)', () => {
   });
 
   test('filters combine: category + size', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     await group(page, 'Category').getByRole('button', { name: 'Fine Art' }).click();
     await group(page, 'Size').getByRole('button', { name: 'Small' }).click();
     await expect.poll(() => titles(page)).toEqual(['Morning Light']);
@@ -107,13 +136,13 @@ test.describe('artwork filters (sidebar)', () => {
   });
 
   test('availability: "Available only" hides the sold work', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     await group(page, 'Availability').getByRole('button', { name: 'Available only' }).click();
     await expect.poll(() => titles(page)).toEqual(['Evening Reverie', 'Quiet Garden', 'Resin Tide']);
   });
 
   test('no match: a friendly message and a way back', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     await group(page, 'Category').getByRole('button', { name: 'Resin' }).click();
     await group(page, 'Size').getByRole('button', { name: 'Medium' }).click(); // the only resin work is small
     await expect(page.getByText('No artworks match these filters.')).toBeVisible();
@@ -138,7 +167,7 @@ test.describe('artwork filters (sidebar)', () => {
   });
 
   test('the options are keyboard friendly with at least a 44px touch target', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     const resin = group(page, 'Category').getByRole('button', { name: 'Resin' });
     const box = await resin.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -155,7 +184,7 @@ test.describe('artwork filters (sidebar)', () => {
   });
 
   test('the filters speak Danish on the Danish page, with names falling back to English', async ({ page }) => {
-    await page.goto('/da/artworks');
+    await page.goto('/da/artworks?category=all');
     for (const name of ['Kategori', 'Størrelse', 'Tilgængelighed']) await expect(group(page, name)).toBeVisible();
     await expect(group(page, 'Pris')).toHaveCount(0);
     expect(await optionNames(group(page, 'Størrelse'))).toEqual(['Alle', 'Lille', 'Mellemstor', 'Stor']);
@@ -173,7 +202,7 @@ test.describe('artwork filters (sidebar)', () => {
   });
 
   priceFilterTest('price filter (only when switched on): ranges, combinations and no match for unpriced work', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     const price = group(page, 'Price');
     await expect(price.getByRole('button')).toHaveCount(3);
     await price.getByRole('button', { name: 'Under DKK 5,000' }).click();
@@ -185,7 +214,7 @@ test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test('the filters fold away behind a "Filters" button and open on demand', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     await expect(cards(page)).toHaveCount(4);
     const toggle = page.getByRole('button', { name: /^Filters/ });
     await expect(toggle).toBeVisible();
@@ -227,7 +256,7 @@ test.describe('wording and About', () => {
 
 test.describe('filter groups fold open and closed', () => {
   test('each group header is a button that hides and shows its options', async ({ page }) => {
-    await page.goto('/artworks');
+    await page.goto('/artworks?category=all');
     for (const name of ['Category', 'Size', 'Availability']) {
       const header = page.getByRole('button', { name, exact: true });
       await expect(header).toHaveAttribute('aria-expanded', 'true');
@@ -243,7 +272,7 @@ test.describe('filter groups fold open and closed', () => {
   });
 
   test('a choice that is already made stays applied while its group is folded', async ({ page }) => {
-    await page.goto('/artworks?size=small');
+    await page.goto('/artworks?category=all&size=small');
     await expect(page.getByText('Showing 2 of 4')).toBeVisible();
     await page.getByRole('button', { name: 'Size', exact: true }).click();
     await expect(page.getByText('Showing 2 of 4')).toBeVisible();

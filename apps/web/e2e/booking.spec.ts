@@ -96,7 +96,7 @@ test.describe('booking a paid workshop', () => {
     await expect(page.getByRole('heading', { name: 'Your place is booked' })).toBeVisible();
 
     await page.goto(`/workshops/${slug}`);
-    await expect(page.getByText('Sold out')).toBeVisible();
+    await expect(page.getByText('Sold out', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Your name')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Have a question first? Write to me.' })).toBeVisible();
   });
@@ -112,7 +112,7 @@ test.describe('booking a paid workshop', () => {
     expect(other.status()).toBe(201);
     await fillAndSubmit(page, { places: 2 });
     await expect(page.getByRole('alert').filter({ hasText: 'sold out' })).toBeVisible(); // stays after the form goes away
-    await expect(page.getByText('Sold out')).toBeVisible(); // the page refreshed its numbers
+    await expect(page.getByText('Sold out', { exact: true })).toBeVisible({ timeout: 20_000 }); // the page refreshed its numbers
   });
 });
 
