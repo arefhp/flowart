@@ -31,19 +31,15 @@ test.describe('artwork filters (sidebar)', () => {
     await expect(category.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('the choices look pressable: outlined chips, the chosen one filled, and a real checkbox', async ({ page }) => {
+  test('the choices look clickable: a pointer cursor, and a tint when the mouse is over one', async ({ page }) => {
     await page.goto('/artworks');
     const resin = group(page, 'Category').getByRole('button', { name: 'Resin' });
     await expect(resin).toHaveCSS('cursor', 'pointer');
-    await expect(resin).toHaveCSS('border-top-width', '1px');
-    const chosen = group(page, 'Category').getByRole('button', { name: 'Fine Art' });
-    const filled = await chosen.evaluate((e) => getComputedStyle(e).backgroundColor);
-    const plain = await resin.evaluate((e) => getComputedStyle(e).backgroundColor);
-    expect(filled).not.toBe(plain);
-    const avail = group(page, 'Availability').getByRole('button', { name: 'Available only' });
-    await avail.click();
-    await expect(avail).toHaveAttribute('aria-pressed', 'true');
-    await expect(avail.locator('svg')).toBeVisible(); // the tick inside the box
+    const before = await resin.evaluate((e) => getComputedStyle(e).backgroundColor);
+    await resin.hover();
+    await expect.poll(() => resin.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(before);
+    // the chosen one is marked with the bar and a tint
+    await expect(group(page, 'Category').getByRole('button', { name: 'Fine Art' })).toHaveCSS('border-left-color', 'rgb(30, 36, 48)');
   });
 
   test('the page shows every artwork when All is chosen', async ({ page }) => {

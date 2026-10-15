@@ -34,58 +34,34 @@ function writeAddress(raw: Raw) {
 }
 
 /**
- * One choice in the sidebar. It is drawn as a chip with an outline, so it looks pressable; the chosen
- * one is filled solid. "check" is the on/off variant (a real checkbox square) for "Available only".
+ * One choice in the sidebar: a quiet text row, the active one marked with a bar and heavier type.
+ * On hover the row gets a soft tint and a pointer cursor, so it is clear that it can be clicked.
  */
 function Option({
   active,
   onClick,
   count,
-  check = false,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   count?: number;
-  check?: boolean;
   children: React.ReactNode;
 }) {
-  if (check) {
-    return (
-      <button
-        type="button"
-        aria-pressed={active}
-        onClick={onClick}
-        className="group flex min-h-[44px] w-full cursor-pointer items-center gap-3 rounded-sm text-left text-[0.98rem] text-ink"
-      >
-        <span
-          aria-hidden="true"
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] border transition-colors ${
-            active ? 'border-ink bg-ink text-paper' : 'border-stone bg-paper group-hover:border-ink'
-          }`}
-        >
-          {active ? (
-            <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2.5 6.5 5 9l4.5-5.5" />
-            </svg>
-          ) : null}
-        </span>
-        <span>{children}</span>
-      </button>
-    );
-  }
   return (
     <button
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border px-4 text-[0.95rem] transition-colors ${
-        active ? 'border-ink bg-ink text-paper' : 'border-stone/50 bg-paper text-ink hover:border-ink hover:bg-hairline/50'
+      className={`flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-3 border-l-2 pl-4 pr-2 text-left text-[0.98rem] transition-colors ${
+        active
+          ? 'border-ink bg-hairline/40 font-medium text-ink'
+          : 'border-transparent text-stone hover:border-ink hover:bg-hairline/50 hover:text-ink'
       }`}
     >
       <span>{children}</span>
       {count !== undefined ? (
-        <span aria-hidden="true" className={`text-sm tabular-nums ${active ? 'text-paper/70' : 'text-stone'}`}>
+        <span aria-hidden="true" className="text-sm tabular-nums text-stone/80">
           {count}
         </span>
       ) : null}
@@ -124,7 +100,7 @@ function Group({ id, label, children }: { id: string; label: string; children: R
           </svg>
         </button>
       </h3>
-      <div id={`${id}-options`} hidden={!open} className="flex flex-wrap gap-2 pb-4 pt-1">
+      <div id={`${id}-options`} hidden={!open} className="pb-3">
         {children}
       </div>
     </div>
@@ -276,7 +252,7 @@ export function ArtworksBrowser({
 
           {hasUnavailable ? (
             <Group id="f-availability" label={f.availability}>
-              <Option check active={availableOnly} onClick={() => set('available', '1')}>
+              <Option active={availableOnly} onClick={() => set('available', '1')}>
                 {f.availableOnly}
               </Option>
             </Group>
